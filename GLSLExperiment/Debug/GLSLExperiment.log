@@ -1,0 +1,8 @@
+﻿cl : command line  warning D9035: option 'Gm' has been deprecated and will be removed in a future release
+  example1.cpp
+D:\2025\dhmt\btl36\BaiTHso3_2_project_Cube\BaiTHso3_2_project_Cube\GLSLExperiment\example1.cpp(188,33): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+D:\2025\dhmt\btl36\BaiTHso3_2_project_Cube\BaiTHso3_2_project_Cube\GLSLExperiment\example1.cpp(188,28): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+D:\2025\dhmt\btl36\BaiTHso3_2_project_Cube\BaiTHso3_2_project_Cube\GLSLExperiment\example1.cpp(188,23): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+D:\2025\dhmt\btl36\BaiTHso3_2_project_Cube\BaiTHso3_2_project_Cube\GLSLExperiment\example1.cpp(193,31): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+D:\2025\dhmt\btl36\BaiTHso3_2_project_Cube\BaiTHso3_2_project_Cube\GLSLExperiment\example1.cpp(194,32): warning C4305: 'argument': truncation from 'double' to 'GLfloat'
+  GLSLExperiment.vcxproj -> D:\2025\dhmt\btl36\BaiTHso3_2_project_Cube\BaiTHso3_2_project_Cube\Debug\GLSLExperiment.exe
