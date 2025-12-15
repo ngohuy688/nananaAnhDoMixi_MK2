@@ -17,7 +17,6 @@ void main()
 {
     if (!enableLighting)
     {
-        // T?t chi?u sáng ? hi?n th? màu v?t li?u (ho?c tr?ng)
         color = DiffuseProduct;
         color.a = 1.0;
         return;

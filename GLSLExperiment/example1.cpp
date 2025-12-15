@@ -26,9 +26,6 @@ color4 vertex_colors[8]; /*Danh sách các màu tương ứng cho 8 đỉnh hìn
 
 GLuint program;
 
-GLfloat theta[3] = { 0, 0, 0 };
-GLfloat dr = 5;
-
 mat4 model;
 GLuint model_loc;
 mat4 projection;
@@ -38,23 +35,6 @@ GLuint view_loc;
 
 int CurrentWidth = 700,
 CurrentHeight = 700;
-
-GLuint
-VaoId[2],
-VboId[2],
-VertexShaderId,
-FragmentShaderId,
-ProgramId;
-
-mat4
-model_mat_cpp,
-view_mat_cpp,
-projection_mat_cpp;
-
-int
-model_mat_location,
-view_mat_location,
-projection_mat_location;
 
 // Dùng biến đổi mô hình
 float
@@ -75,10 +55,6 @@ float cameraX = 0.0f;
 float cameraY = 0.0f;
 float cameraZ = 5.0f;
 float moveSpeed = 0.1f;
-float jumpSpeed = 0.2f;
-float gravity = 0.010f;
-bool isJumping = false;
-bool isGrounded = true;
 
 // ======Dùng kiểm tra tịnh tiến, quay, co giãn====
 bool
@@ -128,7 +104,6 @@ void quad(int a, int b, int c, int d)  /*Tạo một mặt hình lập phương 
 	normals[Index] = normal; colors[Index] = vertex_colors[a]; points[Index] = vertices[d]; Index++;
 }
 void makeColorCube(void)  /* Sinh ra 12 tam giác: 36 đỉnh, 36 màu*/
-
 {
 	quad(1, 0, 3, 2);
 	quad(2, 3, 7, 6);
@@ -183,27 +158,6 @@ void shaderSetup(void)
 	glEnableVertexAttribArray(loc_vNormal);
 	glVertexAttribPointer(loc_vNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(points) + sizeof(colors)));
 
-	/* Khởi tạo các tham số chiếu sáng - tô bóng*/
-	point4 light_position(0.0, 1.0, 0.0, 1.0);
-	color4 light_ambient(0.2, 0.2, 0.2, 1.0);
-	color4 light_diffuse(2, 2, 2, 1.0);
-	color4 light_specular(1.0, 1.0, 1.0, 1.0);
-
-	color4 material_ambient(0.4, 0.0, 0.4, 1.0);
-	color4 material_diffuse(1.0, 0.8, 0.0, 1.0);
-	color4 material_specular(1.0, 0.8, 0.0, 1.0);
-	float material_shininess = 100.0;
-
-	color4 ambient_product = light_ambient * material_ambient;
-	color4 diffuse_product = light_diffuse * material_diffuse;
-	color4 specular_product = light_specular * material_specular;
-
-	glUniform4fv(glGetUniformLocation(program, "AmbientProduct"), 1, ambient_product);
-	glUniform4fv(glGetUniformLocation(program, "DiffuseProduct"), 1, diffuse_product);
-	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product);
-
-	glUniform4fv(glGetUniformLocation(program, "LightPosition"), 1, light_position);
-	glUniform1f(glGetUniformLocation(program, "Shininess"), material_shininess);
 
 	model_loc = glGetUniformLocation(program, "Model");
 	projection_loc = glGetUniformLocation(program, "Projection");
@@ -214,12 +168,39 @@ void shaderSetup(void)
 
 
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(1.0, 1.0, 1.0, 1.0);        /* Thiết lập màu trắng là màu xóa màn hình*/
+	glClearColor(1.0, 1.0, 1.0, 1.0);	//xóa trắng
 }
+
+// ánh sáng
+point4 light_position(0.0, 10.0, 5.0, 1.0);   // vị trí mặt trời
+color4 light_ambient(0.3, 0.3, 0.3, 1.0);     // ánh sáng môi trường
+color4 light_diffuse(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
+color4 light_specular(1.0, 1.0, 1.0, 1.0);	  // ánh sáng phản lại
+
+// set màu và vật liệu trước khi vẽ
+void setMaterial(color4 material_ambient, color4 material_diffuse, color4 material_specular, float shininess)
+{
+	color4 ambient_product = light_ambient * material_ambient;
+	color4 diffuse_product = light_diffuse * material_diffuse;
+	color4 specular_product = light_specular * material_specular;
+
+	glUniform4fv(glGetUniformLocation(program, "AmbientProduct"), 1, ambient_product); //độ tối
+	glUniform4fv(glGetUniformLocation(program, "DiffuseProduct"), 1, diffuse_product); //màu gốc
+	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product); //độ bóng
+	glUniform1f(glGetUniformLocation(program, "Shininess"), shininess); //độ sắc của bóng
+}
+
 
 void Tuong() 
 {
-	mat4 instance = Scale(1, 1, 1);
+	setMaterial(
+		color4(0.20, 0.20, 0.20, 1.0), // ambient: sáng vừa trong bóng
+		color4(0.60, 0.60, 0.60, 1.0), // diffuse: xám bê tông
+		color4(0.02, 0.02, 0.02, 1.0), // specular: gần như không bóng
+		5.0                            // shininess: rất nhám
+	);
+
+	mat4 instance = Scale(0.8, 10, 10);
 
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, model*instance);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
@@ -260,7 +241,7 @@ void reshape(int width, int height)
 	glutWarpPointer(midWindowX, midWindowY);
 
 	float aspect = (float)width / height;
-	projection = Perspective(30.0f, aspect, 0.1f, 100.0f);
+	projection = Perspective(90.0f, aspect, 0.1f, 100.0f);
 	glUniformMatrix4fv(projection_loc, 1, GL_TRUE, projection);
 
 	glViewport(0, 0, width, height);
@@ -279,43 +260,47 @@ void keyboard(unsigned char key, int x, int y)
 		forward.x
 	);
 
+	int mod = glutGetModifiers();
+
 	switch (key) {
 	case 033:
 		exit(1);
 		break;
 
-	case 'w':
+	case 'w':	//tiến
 		cameraX += forward.x * moveSpeed;
 		cameraZ += forward.z * moveSpeed;
 		break;
 
-	case 's':
+	case 's':	//lùi
 		cameraX -= forward.x * moveSpeed;
 		cameraZ -= forward.z * moveSpeed;
 		break;
 
 	case 'a':   // sang trái
-		cameraX -= right.x * moveSpeed;
-		cameraZ -= right.z * moveSpeed;
+		cameraX -= right.x * moveSpeed / 2;
+		cameraZ -= right.z * moveSpeed / 2;
 		break;
 
 	case 'd':   // sang phải
-		cameraX += right.x * moveSpeed;
-		cameraZ += right.z * moveSpeed;
+		cameraX += right.x * moveSpeed / 2;
+		cameraZ += right.z * moveSpeed / 2;
+		break;
+	case ' ':	// lên / xuống
+		if (mod & GLUT_ACTIVE_SHIFT)
+		{
+			cameraY -= 0.02f; // xuống
+			glutPostRedisplay();
+			return;
+		}
+		cameraY += 0.02f;
 		break;
 
-	case 'l':
 	case 'L':
+	case 'l':	// bật/tắt sáng
 		enableLighting = !enableLighting;
 		glUniform1i(enableLighting_loc, enableLighting);
 		break;
-
-	case 'x': model *= RotateX(dr); break;
-	case 'X': model *= RotateX(-dr); break;
-	case 'y': model *= RotateY(dr); break;
-	case 'Y': model *= RotateY(-dr); break;
-	case 'z': model *= RotateZ(dr); break;
-	case 'Z': model *= RotateZ(-dr); break;
 	}
 
 	glutPostRedisplay();
