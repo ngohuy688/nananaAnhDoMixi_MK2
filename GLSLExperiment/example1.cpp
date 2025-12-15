@@ -184,12 +184,12 @@ void shaderSetup(void)
 	glVertexAttribPointer(loc_vNormal, 3, GL_FLOAT, GL_FALSE, 0, BUFFER_OFFSET(sizeof(points) + sizeof(colors)));
 
 	/* Khởi tạo các tham số chiếu sáng - tô bóng*/
-	point4 light_position(0.0, 0.0, 1.0, 0.0);
+	point4 light_position(0.0, 1.0, 0.0, 1.0);
 	color4 light_ambient(0.2, 0.2, 0.2, 1.0);
-	color4 light_diffuse(1.0, 1.0, 1.0, 1.0);
+	color4 light_diffuse(2, 2, 2, 1.0);
 	color4 light_specular(1.0, 1.0, 1.0, 1.0);
 
-	color4 material_ambient(1.0, 0.0, 1.0, 1.0);
+	color4 material_ambient(0.4, 0.0, 0.4, 1.0);
 	color4 material_diffuse(1.0, 0.8, 0.0, 1.0);
 	color4 material_specular(1.0, 0.8, 0.0, 1.0);
 	float material_shininess = 100.0;
@@ -201,6 +201,7 @@ void shaderSetup(void)
 	glUniform4fv(glGetUniformLocation(program, "AmbientProduct"), 1, ambient_product);
 	glUniform4fv(glGetUniformLocation(program, "DiffuseProduct"), 1, diffuse_product);
 	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product);
+
 	glUniform4fv(glGetUniformLocation(program, "LightPosition"), 1, light_position);
 	glUniform1f(glGetUniformLocation(program, "Shininess"), material_shininess);
 
@@ -216,6 +217,13 @@ void shaderSetup(void)
 	glClearColor(1.0, 1.0, 1.0, 1.0);        /* Thiết lập màu trắng là màu xóa màn hình*/
 }
 
+void Tuong() 
+{
+	mat4 instance = Scale(1, 1, 1);
+
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, model*instance);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
 
 void display(void)
 {
@@ -235,9 +243,8 @@ void display(void)
 
 	//draw
 	glUniform1i(enableLighting_loc, enableLighting);
-	glUniformMatrix4fv(model_loc, 1, GL_TRUE, model);
+	Tuong();
 
-	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 	glutSwapBuffers();
 }
 
@@ -253,52 +260,67 @@ void reshape(int width, int height)
 	glutWarpPointer(midWindowX, midWindowY);
 
 	float aspect = (float)width / height;
-	projection = Perspective(90.0f, aspect, 0.1f, 100.0f);
+	projection = Perspective(30.0f, aspect, 0.1f, 100.0f);
 	glUniformMatrix4fv(projection_loc, 1, GL_TRUE, projection);
 
 	glViewport(0, 0, width, height);
 }
 void keyboard(unsigned char key, int x, int y)
 {
-	// keyboard handler
+	vec3 forward(
+		sin(yaw),
+		0.0f,
+		-cos(yaw)
+	);
+
+	vec3 right(
+		-forward.z,
+		0.0f,
+		forward.x
+	);
 
 	switch (key) {
-	case 033:			// 033 is Escape key octal value
-		exit(1);		// quit program
+	case 033:
+		exit(1);
 		break;
-	case 'x':
-		model *= RotateX(dr);
-		glutPostRedisplay();
+
+	case 'w':
+		cameraX += forward.x * moveSpeed;
+		cameraZ += forward.z * moveSpeed;
 		break;
-	case 'X':
-		model *= RotateX(-dr);
-		glutPostRedisplay();
+
+	case 's':
+		cameraX -= forward.x * moveSpeed;
+		cameraZ -= forward.z * moveSpeed;
 		break;
-	case 'y':
-		model *= RotateY(dr);
-		glutPostRedisplay();
+
+	case 'a':   // sang trái
+		cameraX -= right.x * moveSpeed;
+		cameraZ -= right.z * moveSpeed;
 		break;
-	case 'Y':
-		model *= RotateY(-dr);
-		glutPostRedisplay();
+
+	case 'd':   // sang phải
+		cameraX += right.x * moveSpeed;
+		cameraZ += right.z * moveSpeed;
 		break;
-	case 'z':
-		model *= RotateZ(dr);
-		glutPostRedisplay();
-		break;
-	case 'Z':
-		model *= RotateZ(-dr);
-		glutPostRedisplay();
-		break;
+
 	case 'l':
 	case 'L':
 		enableLighting = !enableLighting;
 		glUniform1i(enableLighting_loc, enableLighting);
-		glutPostRedisplay();
 		break;
 
+	case 'x': model *= RotateX(dr); break;
+	case 'X': model *= RotateX(-dr); break;
+	case 'y': model *= RotateY(dr); break;
+	case 'Y': model *= RotateY(-dr); break;
+	case 'z': model *= RotateZ(dr); break;
+	case 'Z': model *= RotateZ(-dr); break;
 	}
+
+	glutPostRedisplay();
 }
+
 
 void handleMouseMove(int x, int y) {
 	if (mouseLocked) {
@@ -346,8 +368,6 @@ int main(int argc, char** argv)
 
 	glutReshapeFunc(reshape);
 
-	// trong main(), trước glutMainLoop()
-	model = mat4(1.0);
 
 	glutMainLoop();
 	return 0;
