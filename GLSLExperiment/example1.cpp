@@ -376,10 +376,12 @@ void display(void)
 
 	//light internal
 	if (!inlight) {
-		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
+		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0); 
+
+		if (!inday) light_diffuse = vec4(0.9, 0.9, 0.9, 1.0);
 	}
 	else {
-		light_diffuse = vec4(0.2, 0.2, 0.2, 1.0);   // ánh sáng chiếu trực tiếp
+		light_diffuse = vec4(0.2, 0.2, 0.2, 1.0);
 
 		if (!inday) light_diffuse = vec4(0.01, 0.01, 0.01, 1.0);
 	}
@@ -387,6 +389,8 @@ void display(void)
 	drawRoom();
 	quat();
 	dieuhoa();
+
+
 	glutSwapBuffers();
 }
 
@@ -399,7 +403,7 @@ void reshape(int width, int height)
 	midWindowX = width / 2;
 	midWindowY = height / 2;
 
-	glutWarpPointer(midWindowX, midWindowY);
+	glutWarpPointer(midWindowX, midWindowY); // tâm chuột
 
 	float aspect = (float)width / height;
 	projection = Perspective(90.0f, aspect, 0.1f, 100.0f);
@@ -457,7 +461,8 @@ void keyboard(unsigned char key, int x, int y)
 		}
 		cameraY += 0.08f;
 		break;
-	case '`':
+
+	case '`': // thoát chuột
 		if (mouseLocked)
 			glutSetCursor(GLUT_CURSOR_INHERIT);
 		else
@@ -465,10 +470,10 @@ void keyboard(unsigned char key, int x, int y)
 		mouseLocked = !mouseLocked;
 		break;
 
-	case 'l':
+	case 'l': // sáng/tối
 		inlight = !inlight;
 		break;
-	case 'L':
+	case 'L': // ngày/đêm
 		if (!inday) {
 			sky_red = 1;
 			sky_green = 0.98;
@@ -481,19 +486,22 @@ void keyboard(unsigned char key, int x, int y)
 		}
 		inday = !inday;
 		break;
-	case 'e':	// bật/tắt sáng
+	case 'e':	//mở cửa điều hòa
 		if (airCondition_door_control < 45) airCondition_door_control += 3;
 		break;
-	case 'r':	// bật/tắt sáng
+	case 'r':	// đóng cửa điều hòa
 		if (airCondition_door_control > 0) airCondition_door_control -= 3;
 		break;
 	case 'q':
 		ceilingFan_level = (ceilingFan_level + 1) % 4;
 		break;
 	}
-
-
 	glutPostRedisplay();
+}
+
+void Instructor() {
+	cout << "a, s, w, d, space, shift + space, mouse: các phím di chuyển \n";
+
 }
 
 
@@ -512,14 +520,6 @@ void handleMouseMove(int x, int y) {
 	}
 	glutPostRedisplay();
 }
-
-
-void timer(int value)
-{
-    glutPostRedisplay();
-    glutTimerFunc(16, timer, 0); // ~60 FPS
-}
-
 
 int main(int argc, char** argv)
 {
@@ -542,8 +542,8 @@ int main(int argc, char** argv)
 	glutPassiveMotionFunc(handleMouseMove);
 
 	glutReshapeFunc(reshape);
-
-	glutTimerFunc(0, timer, 0);
+	
+	Instructor();
 	glutMainLoop();
 	return 0;
 }
