@@ -36,17 +36,10 @@ GLuint view_loc;
 int CurrentWidth = 700,
 CurrentHeight = 700;
 
-// Dùng biến đổi mô hình
-float
-r[] = { 0.0f, 0.0f, 0.0f },
-s[] = { 1.0f, 1.0f, 1.0f },
-t[] = { 0.0f, 0.0f, 0.0f };
 //=============sử dụng cho camera============
 int midWindowX;
 int midWindowY;
 
-
-bool keys[256]; // Array to keep track of pressed keys
 bool mouseLocked = true;
 float yaw = 0.0f;
 float pitch = 0.0f;
@@ -55,6 +48,9 @@ float cameraX = 0.0f;
 float cameraY = 0.0f;
 float cameraZ = 5.0f;
 float moveSpeed = 0.12f;
+
+// màu bầu trời
+GLfloat sky_red = 1, sky_green = 0.98, sky_blue = 0.9;
 
 
 void initCube()
@@ -153,7 +149,6 @@ void shaderSetup(void)
 
 
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(1.0, 1.0, 1.0, 1.0);	//xóa trắng
 }
 
 // ánh sáng
@@ -162,7 +157,7 @@ color4 light_ambient(0.3, 0.3, 0.3, 1.0);     // ánh sáng môi trường
 color4 light_diffuse(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
 color4 light_specular(1.0, 1.0, 1.0, 1.0);	  // ánh sáng phản lại
 bool inlight = true;
-
+bool inday = true;
 // set màu và vật liệu trước khi vẽ
 void setMaterial(color4 material_ambient, color4 material_diffuse, color4 material_specular, float shininess)
 {
@@ -175,15 +170,18 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product); //độ bóng
 	glUniform1f(glGetUniformLocation(program, "Shininess"), shininess); //độ sắc của bóng
 }
+
 // vẽ quạt 
 mat4 ceilingFan_cmt;
 mat4 ceilingFan_model;
-GLfloat ceilingFan_control=0;
+int ceilingFan_control=0;
+int ceilingFan_levels[4] = { 0, 3, 6 , 9 };
+int ceilingFan_level = 0;
 void trucquat()
 {
 	setMaterial(
 		color4(0.08, 0.08, 0.10, 1.0),   // ambient
-		color4(0.45, 0.48, 0.52, 1.0),   // diffuse 
+		color4(0.31, 0.78, 0.47, 1.0),   // diffuse 
 		color4(0.8, 0.8, 0.8, 1.0),      // specular
 		64.0                            // shininess
 	);
@@ -198,7 +196,7 @@ void dongco()
 {
 	setMaterial(
 		color4(0.10, 0.10, 0.12, 1.0),   // ambient
-		color4(0.60, 0.62, 0.65, 1.0),   // diffuse
+		color4(0.31, 0.78, 0.47, 1.0),   // diffuse
 		color4(0.4, 0.4, 0.4, 1.0),      // specular
 		24.0                            // shininess
 	);
@@ -213,7 +211,7 @@ void canhquat()
 {
 	setMaterial(
 		color4(0.07, 0.07, 0.09, 1.0),   // ambient
-		color4(0.50, 0.53, 0.57, 1.0),   // diffuse 
+		color4(0.31, 0.78, 0.47, 1.0),   // diffuse 
 		color4(0.3, 0.3, 0.3, 1.0),      // specular
 		16.0                            // shininess
 	);
@@ -230,6 +228,7 @@ void quat()
 	ceilingFan_cmt = Translate(0, 1.75, -2);
 	trucquat();
 	dongco();
+	ceilingFan_control = (ceilingFan_control + ceilingFan_levels[ceilingFan_level]) % 360;
 	ceilingFan_cmt *= RotateY(ceilingFan_control);
 	canhquat();
 }
@@ -262,7 +261,7 @@ void dieuhoa() {
 		color4(0.20, 0.20, 0.20, 1.0),   // Specular
 		20.0                             // Shininess
 	);
-	block_airCondition_ctm = Translate(2.95, 2.2, -3) * RotateY(-90);
+	block_airCondition_ctm = Translate(2.95, 2.2, -3.5) * RotateY(-90);
 	drawBlock(vec3(0.0, 0.0, 0.01), vec3(0.8, 0.3, 0.02));
 	drawBlock(vec3(0.0, 0.05, 0.19), vec3(0.8, 0.2, 0.02));
 
@@ -271,7 +270,7 @@ void dieuhoa() {
 
 	drawBlock(vec3(-0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
 	drawBlock(vec3(0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
-	block_airCondition_ctm *= Translate(0,-0.05,0.2) *  RotateX(airCondition_door_control) * Translate(0, 0.05, -0.2);
+	block_airCondition_ctm *= Translate(0,-0.05,0.2) *  RotateX(-airCondition_door_control) * Translate(0, 0.05, -0.2);
 	canhdh();
 }
 
@@ -301,6 +300,7 @@ void drawRoom()
 		color4(0.05, 0.05, 0.05, 1.0),
 		8.0
 	);
+	// Bên trong
 	// TRẦN
 	drawWallBlock(vec3(0, 2.5, -2), vec3(6, 0.05, 8.0));
 
@@ -319,10 +319,47 @@ void drawRoom()
 	drawWallBlock(vec3(2.0, 0.5, 2), vec3(2.0, 4, 0.05));
 	// trên
 	drawWallBlock(vec3(0, 2.0, 2), vec3(2.0, 1.0, 0.05));
+
+	// Bên ngoài
+	color4 tmp = light_diffuse;
+	if(inday) 
+		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);
+	else 
+		light_diffuse = vec4(0.3, 0.3, 0.3, 1.0);
+	setMaterial(
+		color4(0.25, 0.25, 0.25, 1.0),
+		color4(0.7, 0.7, 0.7, 1.0),
+		color4(0.05, 0.05, 0.05, 1.0),
+		8.0
+	);
+
+	// sàn
+	drawWallBlock(vec3(0, -1.55, -2), vec3(6.1, 0.05, 8.1));
+	// TRẦN
+	drawWallBlock(vec3(0, 2.55, -2), vec3(6.1, 0.05, 8.1));
+
+	//  TƯỜNG SAU
+	drawWallBlock(vec3(0, 0.5, -6.05), vec3(6.1, 4.1, 0.05));
+
+	// TƯỜNG TRÁI
+	drawWallBlock(vec3(-3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
+
+	// TƯỜNG PHẢI
+	drawWallBlock(vec3(3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
+
+	// TƯỜNG TRƯỚC
+	// 2 bên
+	drawWallBlock(vec3(-2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
+	drawWallBlock(vec3(2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
+	// trên
+	drawWallBlock(vec3(0, 2.025, 2.05), vec3(2, 1.025, 0.05));
+
+	light_diffuse = tmp;
 }
 
 void display(void)
 {
+	glClearColor(sky_red, sky_green, sky_blue, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//view
 	vec4 eye(cameraX, cameraY, cameraZ, 1.0);
@@ -337,6 +374,15 @@ void display(void)
 	view = LookAt(eye, at, up);
 	glUniformMatrix4fv(view_loc, 1, GL_TRUE, view);
 
+	//light internal
+	if (!inlight) {
+		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
+	}
+	else {
+		light_diffuse = vec4(0.2, 0.2, 0.2, 1.0);   // ánh sáng chiếu trực tiếp
+
+		if (!inday) light_diffuse = vec4(0.01, 0.01, 0.01, 1.0);
+	}
 	//draw
 	drawRoom();
 	quat();
@@ -420,21 +466,32 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 
 	case 'l':
-		if (!inlight) {
-			light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
-		}
-		else {
-			light_diffuse = vec4(0.2, 0.2, 0.2, 1.0);   // ánh sáng chiếu trực tiếp
-		}
 		inlight = !inlight;
 		break;
-	case 'L':	// bật/tắt sáng
-		airCondition_door_control+=2;
+	case 'L':
+		if (!inday) {
+			sky_red = 1;
+			sky_green = 0.98;
+			sky_blue = 0.9;
+		}
+		else {
+			sky_red = 0.1;
+			sky_green = 0.1;
+			sky_blue = 0.25;
+		}
+		inday = !inday;
+		break;
+	case 'e':	// bật/tắt sáng
+		if (airCondition_door_control < 45) airCondition_door_control += 3;
+		break;
+	case 'r':	// bật/tắt sáng
+		if (airCondition_door_control > 0) airCondition_door_control -= 3;
 		break;
 	case 'q':
-		ceilingFan_control += 2;
+		ceilingFan_level = (ceilingFan_level + 1) % 4;
 		break;
 	}
+
 
 	glutPostRedisplay();
 }
@@ -456,9 +513,11 @@ void handleMouseMove(int x, int y) {
 	glutPostRedisplay();
 }
 
-void handleKeyRelease(unsigned char key, int x, int y) {
-	keys[key] = false;
-	glutPostRedisplay();
+
+void timer(int value)
+{
+    glutPostRedisplay();
+    glutTimerFunc(16, timer, 0); // ~60 FPS
 }
 
 
@@ -481,12 +540,10 @@ int main(int argc, char** argv)
 
 	glutSetCursor(GLUT_CURSOR_NONE);
 	glutPassiveMotionFunc(handleMouseMove);
-	glutKeyboardUpFunc(handleKeyRelease);
-
 
 	glutReshapeFunc(reshape);
 
-
+	glutTimerFunc(0, timer, 0);
 	glutMainLoop();
 	return 0;
 }
