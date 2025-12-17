@@ -54,17 +54,7 @@ float pitch = 0.0f;
 float cameraX = 0.0f;
 float cameraY = 0.0f;
 float cameraZ = 5.0f;
-float moveSpeed = 0.1f;
-
-// ======Dùng kiểm tra tịnh tiến, quay, co giãn====
-bool
-translated = false,
-rotated = false,
-scaled = false;
-//bật tắt chiếu sáng
-bool enableLighting = true;
-GLuint enableLighting_loc;
-
+float moveSpeed = 0.12f;
 
 
 void initCube()
@@ -135,8 +125,6 @@ void initGPUBuffers(void)
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(points), points);
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points), sizeof(colors), colors);
 	glBufferSubData(GL_ARRAY_BUFFER, sizeof(points) + sizeof(colors), sizeof(normals), normals);
-
-
 }
 
 void shaderSetup(void)
@@ -163,19 +151,17 @@ void shaderSetup(void)
 	projection_loc = glGetUniformLocation(program, "Projection");
 	view_loc = glGetUniformLocation(program, "View");
 
-	enableLighting_loc = glGetUniformLocation(program, "enableLighting");
-	glUniform1i(enableLighting_loc, enableLighting);
-
 
 	glEnable(GL_DEPTH_TEST);
 	glClearColor(1.0, 1.0, 1.0, 1.0);	//xóa trắng
 }
 
 // ánh sáng
-point4 light_position(0.0, 10.0, 5.0, 1.0);   // vị trí mặt trời
+point4 light_position(0.0, 1.0, 0.0, 0);   // vị trí mặt trời
 color4 light_ambient(0.3, 0.3, 0.3, 1.0);     // ánh sáng môi trường
 color4 light_diffuse(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
 color4 light_specular(1.0, 1.0, 1.0, 1.0);	  // ánh sáng phản lại
+bool inlight = true;
 
 // set màu và vật liệu trước khi vẽ
 void setMaterial(color4 material_ambient, color4 material_diffuse, color4 material_specular, float shininess)
@@ -189,21 +175,150 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product); //độ bóng
 	glUniform1f(glGetUniformLocation(program, "Shininess"), shininess); //độ sắc của bóng
 }
-
-
-void Tuong() 
+// vẽ quạt 
+mat4 ceilingFan_cmt;
+mat4 ceilingFan_model;
+GLfloat ceilingFan_control=0;
+void trucquat()
 {
 	setMaterial(
-		color4(0.20, 0.20, 0.20, 1.0), // ambient: sáng vừa trong bóng
-		color4(0.60, 0.60, 0.60, 1.0), // diffuse: xám bê tông
-		color4(0.02, 0.02, 0.02, 1.0), // specular: gần như không bóng
-		5.0                            // shininess: rất nhám
+		color4(0.08, 0.08, 0.10, 1.0),   // ambient
+		color4(0.45, 0.48, 0.52, 1.0),   // diffuse 
+		color4(0.8, 0.8, 0.8, 1.0),      // specular
+		64.0                            // shininess
 	);
 
-	mat4 instance = Scale(0.8, 10, 10);
+	for (int i = 0; i <= 360; i += 1) {
+		ceilingFan_model = Translate(0, 0.4, 0) * RotateY(i) * Scale(0.07, 0.7, 0.07);
+		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+}
+void dongco()
+{
+	setMaterial(
+		color4(0.10, 0.10, 0.12, 1.0),   // ambient
+		color4(0.60, 0.62, 0.65, 1.0),   // diffuse
+		color4(0.4, 0.4, 0.4, 1.0),      // specular
+		24.0                            // shininess
+	);
 
-	glUniformMatrix4fv(model_loc, 1, GL_TRUE, model*instance);
+	for (int i = 0; i <= 360; i += 1) {
+		ceilingFan_model = RotateY(i) * Scale(0.5, 0.2, 0.1);
+		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+}
+void canhquat()
+{
+	setMaterial(
+		color4(0.07, 0.07, 0.09, 1.0),   // ambient
+		color4(0.50, 0.53, 0.57, 1.0),   // diffuse 
+		color4(0.3, 0.3, 0.3, 1.0),      // specular
+		16.0                            // shininess
+	);
+
+	for (int i = 0; i < 360; i += 120)
+	{
+		ceilingFan_model = RotateY(i) * Translate(0.6, 0.0, 0.0) * Scale(1.2, 0.02, 0.3);
+		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
+}
+void quat() 
+{
+	ceilingFan_cmt = Translate(0, 1.75, -2);
+	trucquat();
+	dongco();
+	ceilingFan_cmt *= RotateY(ceilingFan_control);
+	canhquat();
+}
+
+// điều hòa
+mat4 block_airCondition_model;
+mat4 block_airCondition_ctm;
+GLfloat airCondition_door_control;
+void drawBlock(vec3 pos, vec3 size)
+{
+	block_airCondition_model = Translate(pos) * Scale(size);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, block_airCondition_ctm * block_airCondition_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+void canhdh() {
+	setMaterial(
+		color4(0.30, 0.30, 0.30, 1.0),
+		color4(0.45, 0.45, 0.45, 1.0),
+		color4(0.10, 0.10, 0.10, 1.0),
+		10.0
+	);
+	drawBlock(vec3(0.0, -0.1, 0.2), vec3(0.8, 0.1, 0.01));
+}
+
+void dieuhoa() {
+	setMaterial(
+		color4(0.85, 0.85, 0.85, 1.0),   // Ambient
+		color4(0.95, 0.95, 0.95, 1.0),   // Diffuse
+		color4(0.20, 0.20, 0.20, 1.0),   // Specular
+		20.0                             // Shininess
+	);
+	block_airCondition_ctm = Translate(2.95, 2.2, -3) * RotateY(-90);
+	drawBlock(vec3(0.0, 0.0, 0.01), vec3(0.8, 0.3, 0.02));
+	drawBlock(vec3(0.0, 0.05, 0.19), vec3(0.8, 0.2, 0.02));
+
+	drawBlock(vec3(0.0, 0.14, 0.10), vec3(0.8, 0.02, 0.16));
+	drawBlock(vec3(0.0, -0.14, 0.10), vec3(0.8, 0.02, 0.16));
+
+	drawBlock(vec3(-0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
+	drawBlock(vec3(0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
+	block_airCondition_ctm *= Translate(0,-0.05,0.2) *  RotateX(airCondition_door_control) * Translate(0, 0.05, -0.2);
+	canhdh();
+}
+
+// nhà
+mat4 block_wall;
+void drawWallBlock(vec3 pos, vec3 size)
+{
+	block_wall = Translate(pos) * Scale(size);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, block_wall);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+void drawRoom()
+{
+	setMaterial(
+		color4(0.20, 0.12, 0.05, 1.0), 
+		color4(0.55, 0.35, 0.15, 1.0),
+		color4(0.08, 0.08, 0.08, 1.0), 
+		15.0
+	);
+
+	// SÀN
+	drawWallBlock(vec3(0, -1.5, -2), vec3(6, 0.05, 8.0));
+
+	setMaterial(
+		color4(0.25, 0.25, 0.25, 1.0),
+		color4(0.7, 0.7, 0.7, 1.0),
+		color4(0.05, 0.05, 0.05, 1.0),
+		8.0
+	);
+	// TRẦN
+	drawWallBlock(vec3(0, 2.5, -2), vec3(6, 0.05, 8.0));
+
+	//  TƯỜNG SAU
+	drawWallBlock(vec3(0, 0.5, -6), vec3(6, 4, 0.05));
+
+	// TƯỜNG TRÁI
+	drawWallBlock(vec3(-3, 0.5, -2), vec3(0.05, 4.0, 8.0));
+
+	// TƯỜNG PHẢI
+	drawWallBlock(vec3(3, 0.5, -2), vec3(0.05, 4.0, 8.0));
+
+	// TƯỜNG TRƯỚC
+	// 2 bên
+	drawWallBlock(vec3(-2.0, 0.5, 2), vec3(2.0, 4, 0.05));
+	drawWallBlock(vec3(2.0, 0.5, 2), vec3(2.0, 4, 0.05));
+	// trên
+	drawWallBlock(vec3(0, 2.0, 2), vec3(2.0, 1.0, 0.05));
 }
 
 void display(void)
@@ -223,9 +338,9 @@ void display(void)
 	glUniformMatrix4fv(view_loc, 1, GL_TRUE, view);
 
 	//draw
-	glUniform1i(enableLighting_loc, enableLighting);
-	Tuong();
-
+	drawRoom();
+	quat();
+	dieuhoa();
 	glutSwapBuffers();
 }
 
@@ -246,6 +361,7 @@ void reshape(int width, int height)
 
 	glViewport(0, 0, width, height);
 }
+
 void keyboard(unsigned char key, int x, int y)
 {
 	vec3 forward(
@@ -278,28 +394,45 @@ void keyboard(unsigned char key, int x, int y)
 		break;
 
 	case 'a':   // sang trái
-		cameraX -= right.x * moveSpeed / 2;
-		cameraZ -= right.z * moveSpeed / 2;
+		cameraX -= right.x * moveSpeed;
+		cameraZ -= right.z * moveSpeed;
 		break;
 
 	case 'd':   // sang phải
-		cameraX += right.x * moveSpeed / 2;
-		cameraZ += right.z * moveSpeed / 2;
+		cameraX += right.x * moveSpeed;
+		cameraZ += right.z * moveSpeed;
 		break;
 	case ' ':	// lên / xuống
 		if (mod & GLUT_ACTIVE_SHIFT)
 		{
-			cameraY -= 0.02f; // xuống
+			cameraY -= 0.08f; // xuống
 			glutPostRedisplay();
 			return;
 		}
-		cameraY += 0.02f;
+		cameraY += 0.08f;
+		break;
+	case '`':
+		if (mouseLocked)
+			glutSetCursor(GLUT_CURSOR_INHERIT);
+		else
+			glutSetCursor(GLUT_CURSOR_NONE);
+		mouseLocked = !mouseLocked;
 		break;
 
-	case 'L':
-	case 'l':	// bật/tắt sáng
-		enableLighting = !enableLighting;
-		glUniform1i(enableLighting_loc, enableLighting);
+	case 'l':
+		if (!inlight) {
+			light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
+		}
+		else {
+			light_diffuse = vec4(0.2, 0.2, 0.2, 1.0);   // ánh sáng chiếu trực tiếp
+		}
+		inlight = !inlight;
+		break;
+	case 'L':	// bật/tắt sáng
+		airCondition_door_control+=2;
+		break;
+	case 'q':
+		ceilingFan_control += 2;
 		break;
 	}
 
@@ -315,8 +448,8 @@ void handleMouseMove(int x, int y) {
 		yaw += deltaX * 0.001f;
 		pitch += deltaY * -0.001f;
 
-		if (pitch > 1.5f) pitch = 1.5f;
-		else if (pitch < -1.5f) pitch = -1.5f;
+		if (pitch > 2.0f) pitch = 2.0f;
+		else if (pitch < -2.0f) pitch = -2.0f;
 
 		glutWarpPointer(midWindowX, midWindowY);
 	}
@@ -327,6 +460,7 @@ void handleKeyRelease(unsigned char key, int x, int y) {
 	keys[key] = false;
 	glutPostRedisplay();
 }
+
 
 int main(int argc, char** argv)
 {
@@ -343,7 +477,6 @@ int main(int argc, char** argv)
 	shaderSetup();
 
 	glutDisplayFunc(display);
-
 	glutKeyboardFunc(keyboard);
 
 	glutSetCursor(GLUT_CURSOR_NONE);

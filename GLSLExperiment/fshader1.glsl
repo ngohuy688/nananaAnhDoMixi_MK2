@@ -11,17 +11,8 @@ uniform vec4 SpecularProduct;
 uniform vec4 LightPosition;
 uniform float Shininess;
 
-uniform bool enableLighting;
-
 void main()
 {
-    if (!enableLighting)
-    {
-        color = DiffuseProduct;
-        color.a = 1.0;
-        return;
-    }
-
     vec3 N = normalize(fNormal);
     vec3 L = normalize(LightPosition.xyz - fPosition);
     vec3 E = normalize(-fPosition);
