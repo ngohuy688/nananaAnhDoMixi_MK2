@@ -1,4 +1,4 @@
-﻿/*Chương trình chiếu sáng Blinn-Phong (Phong sua doi) cho hình lập phương đơn vị, điều khiển quay bằng phím x, y, z, X, Y, Z.*/
+/*Chương trình chiếu sáng Blinn-Phong (Phong sua doi) cho hình lập phương đơn vị, điều khiển quay bằng phím x, y, z, X, Y, Z.*/
 
 #include "Angel.h"  /* Angel.h là file tự phát triển (tác giả Prof. Angel), có chứa cả khai báo includes glew và freeglut*/
 
@@ -240,6 +240,154 @@ void quat()
 mat4 block_airCondition_model;
 mat4 block_airCondition_ctm;
 GLfloat airCondition_door_control;
+// ====== CỬA PHÒNG ======
+mat4 door_ctm;
+mat4 door_model;
+GLfloat door_angle = 0.0f;      // góc mở cửa
+GLfloat knob_angle = 0.0f;      // góc xoay núm
+// ===== CAMERA AN NINH =====
+mat4 securityCam_ctm;
+mat4 securityCam_model;
+bool securityCam_on = false;
+
+GLfloat securityCam_angle = 0.0f;
+GLint securityCam_dir = 1;   // 1: sang phải, -1: sang trái
+vec3 securityCam_pos(-2.0, 1.4, -5.2);
+float securityCam_baseYaw = 130.0f;   // quay vào phòng
+float securityCam_pitch = -50.0f;
+vec3 playerSavedPos;
+float playerSavedYaw, playerSavedPitch;
+bool inSecurityView = false;
+
+
+void switchToSecurityCamera()
+{
+	// đặt vị trí
+	cameraX = securityCam_pos.x;
+	cameraY = securityCam_pos.y;
+	cameraZ = securityCam_pos.z;
+
+	// yaw = hướng camera an ninh + góc quét
+	yaw = (securityCam_baseYaw + securityCam_angle) * DegreesToRadians;
+	pitch = securityCam_pitch * DegreesToRadians;
+
+}
+
+
+void drawSecurityCamera()
+{
+	// ===== VỊ TRÍ GẮN CAMERA (TRÊN TƯỜNG) =====
+	securityCam_ctm = Translate(-2.5, 1.8, -5.9); // góc tường trước
+	securityCam_ctm *= RotateY(180);             // quay vào trong phòng
+	securityCam_ctm *= RotateX(-20);
+
+	// ===== GIÁ TREO =====
+	setMaterial(
+		color4(0.15, 0.15, 0.15, 1.0),
+		color4(0.35, 0.35, 0.35, 1.0),
+		color4(0.3, 0.3, 0.3, 1.0),
+		32.0
+	);
+	securityCam_model = Scale(0.15, 0.05, 0.15);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, securityCam_ctm * securityCam_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// ===== PHẦN XOAY (PAN) =====
+	mat4 pan = securityCam_ctm * RotateY(securityCam_angle);
+
+	// ===== THÂN CAMERA =====
+	setMaterial(
+		color4(0.2, 0.2, 0.2, 1.0),
+		color4(0.6, 0.6, 0.6, 1.0),
+		color4(0.9, 0.9, 0.9, 1.0),
+		64.0
+	);
+	securityCam_model = Translate(0, 0, -0.3) * Scale(0.25, 0.2, 0.5);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pan * securityCam_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// ===== ỐNG KÍNH =====
+	setMaterial(
+		color4(0.05, 0.05, 0.05, 1.0),
+		color4(0.1, 0.1, 0.1, 1.0),
+		color4(1.0, 1.0, 1.0, 1.0),
+		96.0
+	);
+	// ===== CAMERA AN NINH QUÉT =====
+	if (securityCam_on)
+	{
+		securityCam_angle += 0.6f * securityCam_dir;
+
+		if (securityCam_angle > 45)
+			securityCam_dir = -1;
+		else if (securityCam_angle < -45)
+			securityCam_dir = 1;
+	}
+	securityCam_model = Translate(0, 0, -0.58) * Scale(0.12, 0.12, 0.12);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pan * securityCam_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+
+
+void drawRoundDoorKnob(mat4 door_base)
+{
+	setMaterial(
+		color4(0.18, 0.18, 0.18, 1.0),
+		color4(0.85, 0.85, 0.85, 1.0),
+		color4(1.0, 1.0, 1.0, 1.0),
+		80.0
+	);
+
+	// ===== NÚM TRÒN XOAY ĐÚNG TÂM =====
+	mat4 knob =
+		door_base
+		* Translate(-0.6, -0.3, 0.13)   // vị trí núm
+		* RotateZ(knob_angle)          // xoay tại CHÍNH NÚM
+		* Scale(0.12, 0.12, 0.12);
+
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, knob);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// ===== TRỤ NÚM (GẮN LIỀN) =====
+	mat4 stem =
+		door_base
+		* Translate(-0.58, -0.3, 0.03)
+		* Scale(0.06, 0.06, 0.08);
+
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, stem);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+
+
+void drawDoor()
+{
+	setMaterial(
+		color4(0.35, 0.20, 0.05, 1.0),  // gỗ
+		color4(0.60, 0.35, 0.10, 1.0),
+		color4(0.20, 0.20, 0.20, 1.0),
+		32.0
+	);
+
+	// Vị trí bản lề (bên trái cửa)
+	door_ctm = Translate(0, 0.02, 2.02);
+
+	// quay quanh bản lề
+	door_ctm *= Translate(1, 0.0, 0.0)
+		* RotateY(door_angle)
+		* Translate(-1, 0.0, 0.0);
+
+
+	// thân cửa
+	door_model = Scale(2.0, 3.0, 0.05);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, door_ctm * door_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+	// núm cửa
+	drawRoundDoorKnob(door_ctm);
+}
+
+
 void drawBlock(vec3 pos, vec3 size)
 {
 	block_airCondition_model = Translate(pos) * Scale(size);
@@ -392,6 +540,8 @@ void display(void)
 	}
 	//draw
 	drawRoom();
+	drawDoor();
+	drawSecurityCamera();
 	quat();
 	dieuhoa();
 
@@ -437,6 +587,56 @@ void keyboard(unsigned char key, int x, int y)
 	case 033:
 		exit(1);
 		break;
+	case 'v':
+		if (!inSecurityView)
+		{
+			// lưu trạng thái người chơi
+			playerSavedPos = vec3(cameraX, cameraY, cameraZ);
+			playerSavedYaw = yaw;
+			playerSavedPitch = pitch;
+
+			switchToSecurityCamera();
+			inSecurityView = true;
+		}
+		else
+		{
+			// quay lại người chơi
+			cameraX = playerSavedPos.x;
+			cameraY = playerSavedPos.y;
+			cameraZ = playerSavedPos.z;
+			yaw = playerSavedYaw;
+			pitch = playerSavedPitch;
+			inSecurityView = false;
+		}
+		break;
+	case 'c':   // bật / tắt camera an ninh
+		securityCam_on = !securityCam_on;
+		break;
+
+	case 'k':   // vặn núm
+		if (knob_angle < 45)
+			knob_angle += 5;
+		break;
+
+	case 'j':   // thả núm
+		if (knob_angle > 0)
+			knob_angle -= 5;
+		break;
+
+	case 'o':   // mở cửa (CHỈ KHI ĐANG VẶN)
+		if (knob_angle >= 30 && door_angle < 70)
+			door_angle += 3;
+		break;
+
+	case 'p':   // đóng cửa
+		if (door_angle > 0)
+			door_angle -= 3;
+
+		// cửa đóng thì núm tự trả
+		if (door_angle <= 0 && knob_angle > 0)
+			knob_angle -= 3;
+		break;
+
 
 	case 'w':	//tiến
 		cameraX += forward.x * moveSpeed;
@@ -526,7 +726,13 @@ void timer(int)
 
 void Instructor() {
 	cout << "a, s, w, d, space, shift + space, mouse: các phím di chuyển \n";
-
+	cout << "==============Dang Tuan Linh(Cua va camera)================== \n";
+	cout << "Van xuoi num: k de mo cua \n";
+	cout << "Van nguoc num : j de khoa cua \n";
+	cout << "Mo cua : o \n";
+	cout << "Dong cua : p \n";
+	cout << "Bat camera : c \n";
+	cout << "Chuyen sang goc nhin camera : v, an lan nua de ve lai goc nhin ban dau \n";
 }
 
 
