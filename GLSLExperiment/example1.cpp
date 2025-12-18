@@ -456,7 +456,6 @@ void keyboard(unsigned char key, int x, int y)
 		if (mod & GLUT_ACTIVE_SHIFT)
 		{
 			cameraY -= 0.08f; // xuống
-			glutPostRedisplay();
 			return;
 		}
 		cameraY += 0.08f;
@@ -496,7 +495,12 @@ void keyboard(unsigned char key, int x, int y)
 		ceilingFan_level = (ceilingFan_level + 1) % 4;
 		break;
 	}
-	glutPostRedisplay();
+}
+
+void timer(int)
+{
+	glutPostRedisplay();                 // gọi vẽ lại
+	glutTimerFunc(1000 / 60, timer, 0); // lặp lại mỗi 16ms
 }
 
 void Instructor() {
@@ -542,6 +546,7 @@ int main(int argc, char** argv)
 	glutPassiveMotionFunc(handleMouseMove);
 
 	glutReshapeFunc(reshape);
+	glutTimerFunc(0, timer, 0);
 	
 	Instructor();
 	glutMainLoop();
