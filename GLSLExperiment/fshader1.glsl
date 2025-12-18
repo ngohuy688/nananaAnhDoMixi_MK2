@@ -31,4 +31,4 @@ void main()
 
     color = ambient + diffuse + specular;
     color.a = 1.0;
-}
+}//
