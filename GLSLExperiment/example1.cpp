@@ -175,8 +175,8 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 // vẽ quạt 
 mat4 ceilingFan_cmt;
 mat4 ceilingFan_model;
-float ceilingFan_control=0;
-float ceilingFan_levels[4] = { 0, 10, 20, 30};
+float ceilingFan_control = 0;
+float ceilingFan_levels[4] = { 0, 10, 20, 30 };
 int ceilingFan_level = 0;
 float ceilingFan_v = 0;
 
@@ -226,7 +226,7 @@ void canhquat()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 }
-void quat() 
+void quat()
 {
 	ceilingFan_cmt = Translate(0, 1.75, -2);
 	trucquat();
@@ -421,7 +421,7 @@ void dieuhoa() {
 
 	drawBlock(vec3(-0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
 	drawBlock(vec3(0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
-	block_airCondition_ctm *= Translate(0,-0.05,0.2) *  RotateX(-airCondition_door_control) * Translate(0, 0.05, -0.2);
+	block_airCondition_ctm *= Translate(0, -0.05, 0.2) * RotateX(-airCondition_door_control) * Translate(0, 0.05, -0.2);
 	canhdh();
 }
 
@@ -436,9 +436,9 @@ void drawWallBlock(vec3 pos, vec3 size)
 void drawRoom()
 {
 	setMaterial(
-		color4(0.20, 0.12, 0.05, 1.0), 
+		color4(0.20, 0.12, 0.05, 1.0),
 		color4(0.55, 0.35, 0.15, 1.0),
-		color4(0.08, 0.08, 0.08, 1.0), 
+		color4(0.08, 0.08, 0.08, 1.0),
 		15.0
 	);
 
@@ -473,9 +473,9 @@ void drawRoom()
 
 	// Bên ngoài
 	color4 tmp = light_diffuse;
-	if(inday) 
+	if (inday)
 		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);
-	else 
+	else
 		light_diffuse = vec4(0.3, 0.3, 0.3, 1.0);
 	setMaterial(
 		color4(0.25, 0.25, 0.25, 1.0),
@@ -508,6 +508,151 @@ void drawRoom()
 	light_diffuse = tmp;
 }
 
+// Bàn thu ngân
+mat4 pos_model;
+float cashDrawerOpenAmount = 0.0f;   // biến điều khiển ngăn kéo
+
+// Hàm vẽ khối hộp chữ nhật chung cho POS
+void drawPosBlock(vec3 pos, vec3 size) {
+	pos_model = Translate(pos) * Scale(size);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+// HÀM VẼ NGĂN KÉO TIỀN 
+void drawCashDrawer() {
+	// --- 1. VẼ VỎ NGOÀI CỐ ĐỊNH
+	// Phần này đứng yên, bao bọc bên ngoài
+	setMaterial(
+		color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0),
+		color4(0.7, 0.7, 0.7, 1.0), 64.0
+	);
+	drawPosBlock(vec3(2.2, -0.4, 1.0), vec3(0.5, 0.15, 0.6));
+
+	// --- 2. VẼ NGĂN KÉO DI ĐỘNG (Phần trượt ra) ---
+	// Tạo ma trận gốc cho phần di động (Di chuyển theo trục X)
+	mat4 drawer_ctm = Translate(2.2 + cashDrawerOpenAmount, -0.4, 1.0);
+
+	// Kích thước ngăn kéo 
+	float d_len = 0.45f;   // Chiều sâu (trục X)
+	float d_h = 0.12f;     // Chiều cao (trục Y)
+	float d_wid = 0.55f;   // Chiều rộng (trục Z)
+	float t = 0.02f;       // Độ dày của ván gỗ
+
+	// -- a. Vẽ Đáy ngăn kéo --
+	pos_model = drawer_ctm * Translate(0.0, -d_h / 2 + t / 2, 0.0) * Scale(d_len, t, d_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// -- b. Vẽ Thành trước (Phía tay nắm, trục X dương) --
+	pos_model = drawer_ctm * Translate(d_len / 2 - t / 2, 0.0, 0.0) * Scale(t, d_h, d_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// -- c. Vẽ Thành sau (Phía trong, trục X âm) --
+	pos_model = drawer_ctm * Translate(-d_len / 2 + t / 2, 0.0, 0.0) * Scale(t, d_h, d_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// -- d. Vẽ Thành trái (Trục Z âm) --
+	pos_model = drawer_ctm * Translate(0.0, 0.0, -d_wid / 2 + t / 2) * Scale(d_len - 2 * t, d_h, t);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// -- e. Vẽ Thành phải (Trục Z dương) --
+	pos_model = drawer_ctm * Translate(0.0, 0.0, d_wid / 2 - t / 2) * Scale(d_len - 2 * t, d_h, t);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+
+	// --- 3. VẼ TIỀN BÊN TRONG (3 tờ) ---
+	// Tiền phải nằm trên đáy 1 chút (Y cao hơn đáy)
+	float money_y = -d_h / 2 + t + 0.005f;
+	float m_len = 0.24f; // Dài theo X
+	float m_wid = 0.14f; // Rộng theo Z (chia 3 ngăn)
+
+	// Tờ 1: Xanh nước biển (Blue) - Nằm bên trái (Z âm)
+	setMaterial(color4(0.0, 0.0, 0.8, 1.0), color4(0.2, 0.2, 1.0, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	pos_model = drawer_ctm * Translate(0.0, money_y, -0.16) * Scale(m_len, 0.005, m_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Tờ 2: Xanh lá cây (Green) - Nằm giữa
+	setMaterial(color4(0.0, 0.6, 0.0, 1.0), color4(0.0, 0.8, 0.0, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	pos_model = drawer_ctm * Translate(0.0, money_y, 0.0) * Scale(m_len, 0.005, m_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Tờ 3: Hồng đỏ (Pink/Red) - Nằm bên phải (Z dương)
+	setMaterial(color4(0.8, 0.0, 0.2, 1.0), color4(1.0, 0.2, 0.4, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	pos_model = drawer_ctm * Translate(0.0, money_y, 0.16) * Scale(m_len, 0.005, m_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+
+	// --- 4. VẼ TAY NẮM (Khe kéo) ---
+	setMaterial(color4(0.1, 0.1, 0.1, 1.0), color4(0.2, 0.2, 0.2, 1.0), color4(0.5, 0.5, 0.5, 1.0), 32.0);
+	// Dịch ra trước mặt ngăn kéo (d_len/2)
+	pos_model = drawer_ctm * Translate(d_len / 2 + 0.01, 0.0, 0.0) * Scale(0.02, 0.02, 0.3);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+// HÀM VẼ MÀN HÌNH POS
+void drawPosScreen() {
+	setMaterial(
+		color4(0.02, 0.02, 0.02, 1.0), color4(0.08, 0.08, 0.08, 1.0),
+		color4(0.8, 0.8, 0.8, 1.0), 128.0
+	);
+	// Chân đế màn hình 
+	drawPosBlock(vec3(2.2, -0.25, 1.0), vec3(0.15, 0.15, 0.15));
+
+	// Thân màn hình chính 
+	drawPosBlock(vec3(2.2, -0.1, 1.0), vec3(0.05, 0.35, 0.5));
+
+	// Màn hình hiển thị - Đặt lệch về phía X dương (hướng tường)
+	setMaterial(color4(0.8, 0.8, 0.8, 1.0), color4(0.9, 0.9, 0.9, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	// 2.225 là vị trí lệch ra khỏi thân màn hình 1 chút về phía tường
+	drawPosBlock(vec3(2.225, -0.1, 1.0), vec3(0.01, 0.3, 0.45));
+}
+
+// HÀM VẼ MÁY IN HÓA ĐƠN 
+void drawReceiptPrinter() {
+	setMaterial(
+		color4(0.1, 0.1, 0.1, 1.0), color4(0.15, 0.15, 0.15, 1.0),
+		color4(0.3, 0.3, 0.3, 1.0), 32.0
+	);
+	// Thân máy in 
+	// Di chuyển vị trí từ bên trái (x=1.7) sang bên cạnh theo trục Z (z=1.5) để không bị rơi khỏi bàn
+	drawPosBlock(vec3(2.2, -0.4, 1.5), vec3(0.3, 0.25, 0.25));
+
+	// Khe nhả giấy (màu tối hơn) - Hướng lên trên hoặc hướng ra phía tường
+	setMaterial(color4(0.05, 0.05, 0.05, 1.0), color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	drawPosBlock(vec3(2.3, -0.27, 1.5), vec3(0.05, 0.01, 0.15));
+}
+void banthungan() {
+	// 1. VẼ BÀN GỖ
+	setMaterial(
+		color4(0.1, 0.1, 0.1, 1.0),   // Ambient
+		color4(0.55, 0.35, 0.15, 1.0),// Diffuse (Màu gỗ nâu)
+		color4(0.3, 0.3, 0.3, 1.0),   // Specular (Bóng vừa phải)
+		32.0                          // Shininess
+	);
+
+	// Thân bàn chính (Đặt ở bên phải cửa: x=2.2, z=1.0, sàn y=-1.5)
+	// Chiều cao bàn khoảng 1.0 -> Tâm y = -1.5 + 0.5 = -1.0
+	drawWallBlock(vec3(2.2, -1.0, 0.5), vec3(0.8, 1.0, 2.7));
+
+	// Mặt bàn (Mỏng hơn, rộng hơn thân một chút)
+	drawWallBlock(vec3(2.2, -0.48, 0.5), vec3(0.9, 0.05, 2.7));
+
+	// Các thành phần trên bàn thu ngân
+	drawCashDrawer();
+	drawPosScreen();
+	drawReceiptPrinter();
+
+}
+
 void display(void)
 {
 	glClearColor(sky_red, sky_green, sky_blue, 1);
@@ -529,7 +674,7 @@ void display(void)
 
 	//light internal
 	if (!inlight) {
-		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0); 
+		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);
 
 		if (!inday) light_diffuse = vec4(0.9, 0.9, 0.9, 1.0);
 	}
@@ -544,6 +689,8 @@ void display(void)
 	drawSecurityCamera();
 	quat();
 	dieuhoa();
+
+	banthungan();
 
 
 	glutSwapBuffers();
@@ -699,7 +846,18 @@ void keyboard(unsigned char key, int x, int y)
 	case 'q':
 		ceilingFan_level = (ceilingFan_level + 1) % 4;
 		break;
+	case 't': // Mở ngăn kéo tiền
+		cashDrawerOpenAmount += 0.02f;
+		if (cashDrawerOpenAmount > 0.4f) cashDrawerOpenAmount = 0.4f; // Giới hạn mở tối đa
+		glutPostRedisplay();
+		break;
+	case 'T': // Đóng ngăn kéo tiền
+		cashDrawerOpenAmount -= 0.02f;
+		if (cashDrawerOpenAmount < 0.0f) cashDrawerOpenAmount = 0.0f; // Giới hạn đóng tối đa
+		glutPostRedisplay();
+		break;
 	}
+
 }
 
 void timer(int)
@@ -733,6 +891,10 @@ void Instructor() {
 	cout << "Dong cua : p \n";
 	cout << "Bat camera : c \n";
 	cout << "Chuyen sang goc nhin camera : v, an lan nua de ve lai goc nhin ban dau \n";
+	cout << "==============Dao Minh Quan(Ban thu ngan, ngan keo, ghe)================== \n";
+	cout << "Mo ngan keo : t \n";
+	cout << "Dong ngan keo : T \n";
+
 }
 
 
@@ -774,7 +936,7 @@ int main(int argc, char** argv)
 
 	glutReshapeFunc(reshape);
 	glutTimerFunc(0, timer, 0);
-	
+
 	Instructor();
 	glutMainLoop();
 	return 0;
