@@ -147,12 +147,13 @@ void shaderSetup(void)
 	projection_loc = glGetUniformLocation(program, "Projection");
 	view_loc = glGetUniformLocation(program, "View");
 
+	point4 light_position(0.0, 1.0, 0.0, 0);   // vị trí mặt trời
+	glUniform4fv(glGetUniformLocation(program, "LightPosition"), 1, light_position);
 
 	glEnable(GL_DEPTH_TEST);
 }
 
 // ánh sáng
-point4 light_position(0.0, 1.0, 0.0, 0);   // vị trí mặt trời
 color4 light_ambient(0.3, 0.3, 0.3, 1.0);     // ánh sáng môi trường
 color4 light_diffuse(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
 color4 light_specular(1.0, 1.0, 1.0, 1.0);	  // ánh sáng phản lại
@@ -174,9 +175,11 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 // vẽ quạt 
 mat4 ceilingFan_cmt;
 mat4 ceilingFan_model;
-int ceilingFan_control=0;
-int ceilingFan_levels[4] = { 0, 3, 6 , 9 };
+float ceilingFan_control=0;
+float ceilingFan_levels[4] = { 0, 10, 20, 30};
 int ceilingFan_level = 0;
+float ceilingFan_v = 0;
+
 void trucquat()
 {
 	setMaterial(
@@ -186,7 +189,7 @@ void trucquat()
 		64.0                            // shininess
 	);
 
-	for (int i = 0; i <= 360; i += 1) {
+	for (int i = 0; i <= 360; i += 20) {
 		ceilingFan_model = Translate(0, 0.4, 0) * RotateY(i) * Scale(0.07, 0.7, 0.07);
 		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -201,7 +204,7 @@ void dongco()
 		24.0                            // shininess
 	);
 
-	for (int i = 0; i <= 360; i += 1) {
+	for (int i = 0; i <= 360; i += 10) {
 		ceilingFan_model = RotateY(i) * Scale(0.5, 0.2, 0.1);
 		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -228,7 +231,7 @@ void quat()
 	ceilingFan_cmt = Translate(0, 1.75, -2);
 	trucquat();
 	dongco();
-	ceilingFan_control = (ceilingFan_control + ceilingFan_levels[ceilingFan_level]) % 360;
+
 	ceilingFan_cmt *= RotateY(ceilingFan_control);
 	canhquat();
 }
@@ -363,12 +366,14 @@ void display(void)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//view
 	vec4 eye(cameraX, cameraY, cameraZ, 1.0);
-	vec4 at(
-		cameraX + sin(yaw),
-		cameraY + sin(pitch),
-		cameraZ - cos(yaw),
-		1.0
+	vec3 dir(
+		cos(pitch) * sin(yaw),
+		sin(pitch),
+		-cos(pitch) * cos(yaw)
 	);
+
+	vec4 at = eye + vec4(dir, 0.0);
+
 	vec4 up(0.0, 1.0, 0.0, 1.0);
 
 	view = LookAt(eye, at, up);
@@ -499,6 +504,22 @@ void keyboard(unsigned char key, int x, int y)
 
 void timer(int)
 {
+	// tính tốc độ quay của quạt
+	if (ceilingFan_v < ceilingFan_levels[ceilingFan_level])
+		ceilingFan_v += 0.1f;
+
+	if (ceilingFan_level == 0)
+	{
+		ceilingFan_v -= 0.15f;
+		if (ceilingFan_v < 0)
+			ceilingFan_v = 0;
+	}
+
+	ceilingFan_control += ceilingFan_v;
+
+	if (ceilingFan_control > 360)
+		ceilingFan_control -= 360;
+
 	glutPostRedisplay();                 // gọi vẽ lại
 	glutTimerFunc(1000 / 60, timer, 0); // lặp lại mỗi 16ms
 }
@@ -517,8 +538,8 @@ void handleMouseMove(int x, int y) {
 		yaw += deltaX * 0.001f;
 		pitch += deltaY * -0.001f;
 
-		if (pitch > 2.0f) pitch = 2.0f;
-		else if (pitch < -2.0f) pitch = -2.0f;
+		if (pitch > 1.5f) pitch = 1.5f;
+		else if (pitch < -1.5) pitch = -1.5f;
 
 		glutWarpPointer(midWindowX, midWindowY);
 	}
