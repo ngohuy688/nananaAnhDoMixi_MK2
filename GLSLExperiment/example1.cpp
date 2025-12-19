@@ -171,16 +171,25 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product); //độ bóng
 	glUniform1f(glGetUniformLocation(program, "Shininess"), shininess); //độ sắc của bóng
 }
+// vẽ block tĩnh
+mat4 PosBlock;
+void drawPosBlock(vec3 pos, vec3 size)
+{
+	PosBlock = Translate(pos) * Scale(size);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, PosBlock);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
 
 // vẽ quạt 
 mat4 ceilingFan_cmt;
 mat4 ceilingFan_model;
-float ceilingFan_control=0;
+float ceilingFan_angle=0;
 float ceilingFan_levels[4] = { 0, 10, 20, 30};
 int ceilingFan_level = 0;
 float ceilingFan_v = 0;
 
-void trucquat()
+// trục quạt
+void shaft()
 {
 	setMaterial(
 		color4(0.08, 0.08, 0.10, 1.0),   // ambient
@@ -195,7 +204,8 @@ void trucquat()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 }
-void dongco()
+// động cơ
+void engine()
 {
 	setMaterial(
 		color4(0.10, 0.10, 0.12, 1.0),   // ambient
@@ -210,7 +220,8 @@ void dongco()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 }
-void canhquat()
+// cánh quạt
+void propeller()
 {
 	setMaterial(
 		color4(0.07, 0.07, 0.09, 1.0),   // ambient
@@ -226,26 +237,61 @@ void canhquat()
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
 }
-void quat() 
+// ghép lại
+void ceilingFan() 
 {
 	ceilingFan_cmt = Translate(0, 1.75, -2);
-	trucquat();
-	dongco();
+	shaft();
+	engine();
 
-	ceilingFan_cmt *= RotateY(ceilingFan_control);
-	canhquat();
+	ceilingFan_cmt *= RotateY(ceilingFan_angle);
+	propeller();
 }
 
 // điều hòa
-mat4 block_airCondition_model;
-mat4 block_airCondition_ctm;
-GLfloat airCondition_door_control;
-// ====== CỬA PHÒNG ======
-mat4 door_ctm;
-mat4 door_model;
-GLfloat door_angle = 0.0f;      // góc mở cửa
-GLfloat knob_angle = 0.0f;      // góc xoay núm
-// ===== CAMERA AN NINH =====
+mat4 block_airConditioner_model;
+mat4 block_airConditioner_ctm;
+GLfloat airConditioner_door_angle;
+
+void drawBlockAirConditioner(vec3 pos, vec3 size)
+{
+	block_airConditioner_model = Translate(pos) * Scale(size);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, block_airConditioner_ctm * block_airConditioner_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+void airConditioner() 
+{
+	// thân điều hòa
+	setMaterial(
+		color4(0.85, 0.85, 0.85, 1.0),   // Ambient
+		color4(0.95, 0.95, 0.95, 1.0),   // Diffuse
+		color4(0.20, 0.20, 0.20, 1.0),   // Specular
+		20.0                             // Shininess
+	);
+	block_airConditioner_ctm = Translate(2.95, 2.2, -3.5) * RotateY(-90) * Scale(2.0, 2.0, 2.0);
+	drawBlockAirConditioner(vec3(0.0, 0.0, 0.01), vec3(0.8, 0.3, 0.02));
+	drawBlockAirConditioner(vec3(0.0, 0.05, 0.19), vec3(0.8, 0.2, 0.02));
+
+	drawBlockAirConditioner(vec3(0.0, 0.14, 0.10), vec3(0.8, 0.02, 0.16));
+	drawBlockAirConditioner(vec3(0.0, -0.14, 0.10), vec3(0.8, 0.02, 0.16));
+
+	drawBlockAirConditioner(vec3(-0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
+	drawBlockAirConditioner(vec3(0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
+
+	// cánh điều hòa
+	setMaterial(
+		color4(0.30, 0.30, 0.30, 1.0),
+		color4(0.45, 0.45, 0.45, 1.0),
+		color4(0.10, 0.10, 0.10, 1.0),
+		10.0
+	);
+	block_airConditioner_ctm *= Translate(0, -0.05, 0.2) * RotateX(-airConditioner_door_angle) * Translate(0, 0.05, -0.2);
+	drawBlockAirConditioner(vec3(0.0, -0.1, 0.2), vec3(0.8, 0.1, 0.01));
+}
+
+
+// camera an ninh
 mat4 securityCam_ctm;
 mat4 securityCam_model;
 bool securityCam_on = false;
@@ -258,7 +304,6 @@ float securityCam_pitch = -50.0f;
 vec3 playerSavedPos;
 float playerSavedYaw, playerSavedPitch;
 bool inSecurityView = false;
-
 
 void switchToSecurityCamera()
 {
@@ -273,15 +318,14 @@ void switchToSecurityCamera()
 
 }
 
-
 void drawSecurityCamera()
 {
-	// ===== VỊ TRÍ GẮN CAMERA (TRÊN TƯỜNG) =====
+	// vị trí camera
 	securityCam_ctm = Translate(-2.5, 1.8, -5.9); // góc tường trước
 	securityCam_ctm *= RotateY(180);             // quay vào trong phòng
 	securityCam_ctm *= RotateX(-20);
 
-	// ===== GIÁ TREO =====
+	// giá treo
 	setMaterial(
 		color4(0.15, 0.15, 0.15, 1.0),
 		color4(0.35, 0.35, 0.35, 1.0),
@@ -292,10 +336,10 @@ void drawSecurityCamera()
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, securityCam_ctm * securityCam_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 
-	// ===== PHẦN XOAY (PAN) =====
+	// xoay camera
 	mat4 pan = securityCam_ctm * RotateY(securityCam_angle);
 
-	// ===== THÂN CAMERA =====
+	// thân camera
 	setMaterial(
 		color4(0.2, 0.2, 0.2, 1.0),
 		color4(0.6, 0.6, 0.6, 1.0),
@@ -328,8 +372,12 @@ void drawSecurityCamera()
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
 
-
-
+// ====== CỬA PHÒNG ======
+mat4 door_ctm;
+mat4 door_model;
+GLfloat door_angle = 0.0f;      // góc mở cửa
+GLfloat knob_angle = 0.0f;      // góc xoay núm
+// núm cửa
 void drawRoundDoorKnob(mat4 door_base)
 {
 	setMaterial(
@@ -339,7 +387,7 @@ void drawRoundDoorKnob(mat4 door_base)
 		80.0
 	);
 
-	// ===== NÚM TRÒN XOAY ĐÚNG TÂM =====
+	// núm xoay
 	mat4 knob =
 		door_base
 		* Translate(-0.6, -0.3, 0.13)   // vị trí núm
@@ -349,7 +397,7 @@ void drawRoundDoorKnob(mat4 door_base)
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, knob);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 
-	// ===== TRỤ NÚM (GẮN LIỀN) =====
+	// trụ núm
 	mat4 stem =
 		door_base
 		* Translate(-0.58, -0.3, 0.03)
@@ -358,9 +406,7 @@ void drawRoundDoorKnob(mat4 door_base)
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, stem);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
-
-
-
+// cánh cửa
 void drawDoor()
 {
 	setMaterial(
@@ -387,63 +433,148 @@ void drawDoor()
 	drawRoundDoorKnob(door_ctm);
 }
 
+// Bàn thu ngân
+mat4 pos_model;
+float cashDrawerOpenAmount = 1.0f;   // biến điều khiển ngăn kéo
 
-void drawBlock(vec3 pos, vec3 size)
-{
-	block_airCondition_model = Translate(pos) * Scale(size);
-	glUniformMatrix4fv(model_loc, 1, GL_TRUE, block_airCondition_ctm * block_airCondition_model);
+// vẽ ngăn kéo đựng tiền
+void drawCashDrawer() {
+	// vẽ vỏ ngăn kéo
+	setMaterial(
+		color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0),
+		color4(0.7, 0.7, 0.7, 1.0), 64.0
+	);
+	drawPosBlock(vec3(1.6, -0.4, 1.0), vec3(0.5, 0.15, 0.6));
+
+	// vẽ ngăn kéo
+	mat4 drawer_ctm = Translate(1.6 + cashDrawerOpenAmount, -0.4, 1.0);
+
+	// Kích thước ngăn kéo 
+	float d_len = 0.45f;   // Chiều sâu (trục X)
+	float d_h = 0.12f;     // Chiều cao (trục Y)
+	float d_wid = 0.55f;   // Chiều rộng (trục Z)
+	float t = 0.02f;       // Độ dày của ván gỗ
+
+	// Vẽ Đáy ngăn kéo 
+	pos_model = drawer_ctm * Translate(0.0, -d_h / 2 + t / 2, 0.0) * Scale(d_len, t, d_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Thành trước
+	pos_model = drawer_ctm * Translate(d_len / 2 - t / 2, 0.0, 0.0) * Scale(t, d_h, d_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Thành sau
+	pos_model = drawer_ctm * Translate(-d_len / 2 + t / 2, 0.0, 0.0) * Scale(t, d_h, d_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Thành trái
+	pos_model = drawer_ctm * Translate(0.0, 0.0, -d_wid / 2 + t / 2) * Scale(d_len - 2 * t, d_h, t);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Thành phải
+	pos_model = drawer_ctm * Translate(0.0, 0.0, d_wid / 2 - t / 2) * Scale(d_len - 2 * t, d_h, t);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+
+	// vẽ 3 loại tiền
+	float money_y = -d_h / 2 + t + 0.005f;
+	float m_len = 0.24f; // Dài theo X
+	float m_wid = 0.14f; // Rộng theo Z (chia 3 ngăn)
+
+	// Tờ 1: Xanh nước biển 
+	setMaterial(color4(0.0, 0.0, 0.8, 1.0), color4(0.2, 0.2, 1.0, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	pos_model = drawer_ctm * Translate(0.0, money_y, -0.16) * Scale(m_len, 0.005, m_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Tờ 2: Xanh lá cây
+	setMaterial(color4(0.0, 0.6, 0.0, 1.0), color4(0.0, 0.8, 0.0, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	pos_model = drawer_ctm * Translate(0.0, money_y, 0.0) * Scale(m_len, 0.005, m_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// Tờ 3: Hồng đỏ 
+	setMaterial(color4(0.8, 0.0, 0.2, 1.0), color4(1.0, 0.2, 0.4, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	pos_model = drawer_ctm * Translate(0.0, money_y, 0.16) * Scale(m_len, 0.005, m_wid);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+
+	// Khe kéo
+	setMaterial(color4(0.1, 0.1, 0.1, 1.0), color4(0.2, 0.2, 0.2, 1.0), color4(0.5, 0.5, 0.5, 1.0), 32.0);
+	pos_model = drawer_ctm * Translate(d_len / 2 + 0.01, 0.0, 0.0) * Scale(0.02, 0.02, 0.3);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
 
-void canhdh() {
+// màn hình
+void drawPosScreen() {
 	setMaterial(
-		color4(0.30, 0.30, 0.30, 1.0),
-		color4(0.45, 0.45, 0.45, 1.0),
-		color4(0.10, 0.10, 0.10, 1.0),
-		10.0
+		color4(0.02, 0.02, 0.02, 1.0), color4(0.08, 0.08, 0.08, 1.0),
+		color4(0.8, 0.8, 0.8, 1.0), 128.0
 	);
-	drawBlock(vec3(0.0, -0.1, 0.2), vec3(0.8, 0.1, 0.01));
+	// Chân đế màn hình 
+	drawPosBlock(vec3(1.6, -0.25, 1.0), vec3(0.15, 0.15, 0.15));
+
+	// Thân màn hình chính 
+	drawPosBlock(vec3(1.6, -0.1, 1.0), vec3(0.05, 0.35, 0.5));
+
+	// Màn hình hiển thị 
+	setMaterial(color4(0.8, 0.8, 0.8, 1.0), color4(0.9, 0.9, 0.9, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	drawPosBlock(vec3(1.625, -0.1, 1.0), vec3(0.01, 0.3, 0.45));
 }
 
-void dieuhoa() {
+// máy in hóa đơn
+void drawReceiptPrinter() {
 	setMaterial(
-		color4(0.85, 0.85, 0.85, 1.0),   // Ambient
-		color4(0.95, 0.95, 0.95, 1.0),   // Diffuse
-		color4(0.20, 0.20, 0.20, 1.0),   // Specular
-		20.0                             // Shininess
+		color4(0.1, 0.1, 0.1, 1.0), color4(0.15, 0.15, 0.15, 1.0),
+		color4(0.3, 0.3, 0.3, 1.0), 32.0
 	);
-	block_airCondition_ctm = Translate(2.95, 2.2, -3.5) * RotateY(-90);
-	drawBlock(vec3(0.0, 0.0, 0.01), vec3(0.8, 0.3, 0.02));
-	drawBlock(vec3(0.0, 0.05, 0.19), vec3(0.8, 0.2, 0.02));
+	// Thân máy in 
+	drawPosBlock(vec3(1.6, -0.4, 1.5), vec3(0.3, 0.25, 0.25));
 
-	drawBlock(vec3(0.0, 0.14, 0.10), vec3(0.8, 0.02, 0.16));
-	drawBlock(vec3(0.0, -0.14, 0.10), vec3(0.8, 0.02, 0.16));
-
-	drawBlock(vec3(-0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
-	drawBlock(vec3(0.41, 0.0, 0.10), vec3(0.02, 0.3, 0.2));
-	block_airCondition_ctm *= Translate(0,-0.05,0.2) *  RotateX(-airCondition_door_control) * Translate(0, 0.05, -0.2);
-	canhdh();
+	// Khe nhả giấy 
+	setMaterial(color4(0.05, 0.05, 0.05, 1.0), color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	drawPosBlock(vec3(1.7, -0.27, 1.5), vec3(0.05, 0.01, 0.15));
 }
+// bàn thu ngân
+void banthungan() {
+	// 1. VẼ BÀN GỖ
+	setMaterial(
+		color4(0.1, 0.1, 0.1, 1.0),   // Ambient
+		color4(0.55, 0.35, 0.15, 1.0),// Diffuse (Màu gỗ nâu)
+		color4(0.3, 0.3, 0.3, 1.0),   // Specular (Bóng vừa phải)
+		32.0                          // Shininess
+	);
 
-// nhà
-mat4 block_wall;
-void drawWallBlock(vec3 pos, vec3 size)
-{
-	block_wall = Translate(pos) * Scale(size);
-	glUniformMatrix4fv(model_loc, 1, GL_TRUE, block_wall);
-	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+	// Thân bàn
+	drawPosBlock(vec3(1.6, -1.0, 0.5), vec3(0.8, 1.0, 2.7));
+
+	// Mặt bàn 
+	drawPosBlock(vec3(1.6, -0.48, 0.5), vec3(0.9, 0.05, 2.7));
+
+	// Các thành phần trên bàn thu ngân
+	drawCashDrawer();
+	drawPosScreen();
+	drawReceiptPrinter();
 }
+// vẽ nhà
 void drawRoom()
 {
 	setMaterial(
-		color4(0.20, 0.12, 0.05, 1.0), 
+		color4(0.20, 0.12, 0.05, 1.0),
 		color4(0.55, 0.35, 0.15, 1.0),
-		color4(0.08, 0.08, 0.08, 1.0), 
+		color4(0.08, 0.08, 0.08, 1.0),
 		15.0
 	);
 
 	// SÀN
-	drawWallBlock(vec3(0, -1.5, -2), vec3(6, 0.05, 8.0));
+	drawPosBlock(vec3(0, -1.5, -2), vec3(6, 0.05, 8.0));
 
 	setMaterial(
 		color4(0.25, 0.25, 0.25, 1.0),
@@ -453,29 +584,29 @@ void drawRoom()
 	);
 	// Bên trong
 	// TRẦN
-	drawWallBlock(vec3(0, 2.5, -2), vec3(6, 0.05, 8.0));
+	drawPosBlock(vec3(0, 2.5, -2), vec3(6, 0.05, 8.0));
 
 	//  TƯỜNG SAU
-	drawWallBlock(vec3(0, 0.5, -6), vec3(6, 4, 0.05));
+	drawPosBlock(vec3(0, 0.5, -6), vec3(6, 4, 0.05));
 
 	// TƯỜNG TRÁI
-	drawWallBlock(vec3(-3, 0.5, -2), vec3(0.05, 4.0, 8.0));
+	drawPosBlock(vec3(-3, 0.5, -2), vec3(0.05, 4.0, 8.0));
 
 	// TƯỜNG PHẢI
-	drawWallBlock(vec3(3, 0.5, -2), vec3(0.05, 4.0, 8.0));
+	drawPosBlock(vec3(3, 0.5, -2), vec3(0.05, 4.0, 8.0));
 
 	// TƯỜNG TRƯỚC
 	// 2 bên
-	drawWallBlock(vec3(-2.0, 0.5, 2), vec3(2.0, 4, 0.05));
-	drawWallBlock(vec3(2.0, 0.5, 2), vec3(2.0, 4, 0.05));
+	drawPosBlock(vec3(-2.0, 0.5, 2), vec3(2.0, 4, 0.05));
+	drawPosBlock(vec3(2.0, 0.5, 2), vec3(2.0, 4, 0.05));
 	// trên
-	drawWallBlock(vec3(0, 2.0, 2), vec3(2.0, 1.0, 0.05));
+	drawPosBlock(vec3(0, 2.0, 2), vec3(2.0, 1.0, 0.05));
 
 	// Bên ngoài
 	color4 tmp = light_diffuse;
-	if(inday) 
+	if (inday)
 		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);
-	else 
+	else
 		light_diffuse = vec4(0.3, 0.3, 0.3, 1.0);
 	setMaterial(
 		color4(0.25, 0.25, 0.25, 1.0),
@@ -485,25 +616,25 @@ void drawRoom()
 	);
 
 	// sàn
-	drawWallBlock(vec3(0, -1.55, -2), vec3(6.1, 0.05, 8.1));
+	drawPosBlock(vec3(0, -1.55, -2), vec3(6.1, 0.05, 8.1));
 	// TRẦN
-	drawWallBlock(vec3(0, 2.55, -2), vec3(6.1, 0.05, 8.1));
+	drawPosBlock(vec3(0, 2.55, -2), vec3(6.1, 0.05, 8.1));
 
 	//  TƯỜNG SAU
-	drawWallBlock(vec3(0, 0.5, -6.05), vec3(6.1, 4.1, 0.05));
+	drawPosBlock(vec3(0, 0.5, -6.05), vec3(6.1, 4.1, 0.05));
 
 	// TƯỜNG TRÁI
-	drawWallBlock(vec3(-3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
+	drawPosBlock(vec3(-3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
 
 	// TƯỜNG PHẢI
-	drawWallBlock(vec3(3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
+	drawPosBlock(vec3(3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
 
 	// TƯỜNG TRƯỚC
 	// 2 bên
-	drawWallBlock(vec3(-2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
-	drawWallBlock(vec3(2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
+	drawPosBlock(vec3(-2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
+	drawPosBlock(vec3(2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
 	// trên
-	drawWallBlock(vec3(0, 2.025, 2.05), vec3(2, 1.025, 0.05));
+	drawPosBlock(vec3(0, 2.025, 2.05), vec3(2, 1.025, 0.05));
 
 	light_diffuse = tmp;
 }
@@ -542,9 +673,9 @@ void display(void)
 	drawRoom();
 	drawDoor();
 	drawSecurityCamera();
-	quat();
-	dieuhoa();
-
+	ceilingFan();
+	airConditioner();
+	banthungan();
 
 	glutSwapBuffers();
 }
@@ -569,17 +700,9 @@ void reshape(int width, int height)
 
 void keyboard(unsigned char key, int x, int y)
 {
-	vec3 forward(
-		sin(yaw),
-		0.0f,
-		-cos(yaw)
-	);
+	vec3 forward(sin(yaw), 0.0f, -cos(yaw));
 
-	vec3 right(
-		-forward.z,
-		0.0f,
-		forward.x
-	);
+	vec3 right(cos(yaw), 0.0f, sin(yaw));
 
 	int mod = glutGetModifiers();
 
@@ -691,10 +814,10 @@ void keyboard(unsigned char key, int x, int y)
 		inday = !inday;
 		break;
 	case 'e':	//mở cửa điều hòa
-		if (airCondition_door_control < 45) airCondition_door_control += 3;
+		if (airConditioner_door_angle < 45) airConditioner_door_angle += 3;
 		break;
-	case 'r':	// đóng cửa điều hòa
-		if (airCondition_door_control > 0) airCondition_door_control -= 3;
+	case 'E':	// đóng cửa điều hòa
+		if (airConditioner_door_angle > 0) airConditioner_door_angle -= 3;
 		break;
 	case 'q':
 		ceilingFan_level = (ceilingFan_level + 1) % 4;
@@ -715,10 +838,10 @@ void timer(int)
 			ceilingFan_v = 0;
 	}
 
-	ceilingFan_control += ceilingFan_v;
+	ceilingFan_angle += ceilingFan_v;
 
-	if (ceilingFan_control > 360)
-		ceilingFan_control -= 360;
+	if (ceilingFan_angle > 360)
+		ceilingFan_angle -= 360;
 
 	glutPostRedisplay();                 // gọi vẽ lại
 	glutTimerFunc(1000 / 60, timer, 0); // lặp lại mỗi 16ms
