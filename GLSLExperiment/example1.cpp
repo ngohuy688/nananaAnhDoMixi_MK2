@@ -183,8 +183,8 @@ void drawPosBlock(vec3 pos, vec3 size)
 // vẽ quạt 
 mat4 ceilingFan_cmt;
 mat4 ceilingFan_model;
-float ceilingFan_angle=0;
-float ceilingFan_levels[4] = { 0, 10, 20, 30};
+float ceilingFan_angle = 0;
+float ceilingFan_levels[4] = { 0, 10, 20, 30 };
 int ceilingFan_level = 0;
 float ceilingFan_v = 0;
 
@@ -238,7 +238,7 @@ void propeller()
 	}
 }
 // ghép lại
-void ceilingFan() 
+void ceilingFan()
 {
 	ceilingFan_cmt = Translate(0, 1.75, -2);
 	shaft();
@@ -260,7 +260,7 @@ void drawBlockAirConditioner(vec3 pos, vec3 size)
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
 
-void airConditioner() 
+void airConditioner()
 {
 	// thân điều hòa
 	setMaterial(
@@ -716,7 +716,7 @@ float carZ = -1.2f;
 float carHeading = 0.0f;     // deg
 float carSteer = 0.0f;       // deg
 float carWheelSpin = 0.0f;   // deg
-float carScale = 1.0f;
+float carScale = 0.5f;
 
 // -------- Door state --------
 float carDoorAngle = 0.0f;
@@ -736,7 +736,47 @@ const float uSideH = carBodyH - uBottomH;
 const float uLeftL = 1.10f;
 const float uRightL = 0.85f;
 
-mat4 carBaseMatrix()
+
+// -------- CAR PAINT (ADDED) --------
+// Chỉ đổi màu sơn cho THÂN + CỬA (các phần khác giữ nguyên vật liệu cũ).
+struct CarPaintMat
+{
+	color4 ka;
+	color4 kd;
+	color4 ks;
+	float  sh;
+};
+
+constexpr int kNumCarPaints = 6;
+
+
+CarPaintMat gCarPaints[kNumCarPaints] =
+{
+	// đỏ
+	{ color4(0.18, 0.05, 0.05, 1.0), color4(0.85, 0.10, 0.10, 1.0), color4(0.9, 0.9, 0.9, 1.0), 64.0f },
+	// xanh dương
+	{ color4(0.05, 0.05, 0.18, 1.0), color4(0.12, 0.35, 0.95, 1.0), color4(0.9, 0.9, 0.9, 1.0), 64.0f },
+	// xanh lá
+	{ color4(0.05, 0.18, 0.08, 1.0), color4(0.10, 0.80, 0.35, 1.0), color4(0.9, 0.9, 0.9, 1.0), 64.0f },
+	// vàng
+	{ color4(0.18, 0.16, 0.05, 1.0), color4(0.95, 0.82, 0.12, 1.0), color4(0.9, 0.9, 0.9, 1.0), 64.0f },
+	// tím
+	{ color4(0.12, 0.05, 0.18, 1.0), color4(0.65, 0.18, 0.85, 1.0), color4(0.9, 0.9, 0.9, 1.0), 64.0f },
+	// trắng ngà
+	{ color4(0.18, 0.18, 0.16, 1.0), color4(0.92, 0.92, 0.88, 1.0), color4(0.9, 0.9, 0.9, 1.0), 64.0f },
+};
+
+int gCarPaintIdx = 0;
+
+inline CarPaintMat currentCarPaint()
+{
+	int idx = gCarPaintIdx % kNumCarPaints;
+	if (idx < 0) idx += kNumCarPaints;
+	return gCarPaints[idx];
+}
+// -------- END CAR PAINT --------
+
+mat4 carBaseMatrix(float carX, float carY, float carZ, float carHeading, float carScale)
 {
 	return Translate(carX, carY, carZ)
 		* RotateY(carHeading)
@@ -746,10 +786,11 @@ mat4 carBaseMatrix()
 // ---------- PART 1: body chữ U ----------
 void car_body_U(const mat4& Mcar)
 {
-	color4 ka(0.18, 0.05, 0.05, 1.0);
-	color4 kd(0.85, 0.10, 0.10, 1.0);
-	color4 ks(0.9, 0.9, 0.9, 1.0);
-	float  sh = 64.0f;
+	CarPaintMat p = currentCarPaint();
+	color4 ka = p.ka;
+	color4 kd = p.kd;
+	color4 ks = p.ks;
+	float  sh = p.sh;
 
 	float yBottom = -carBodyH * 0.5f + uBottomH * 0.5f;
 	drawCubeNow(Mcar * Translate(0.0f, yBottom, 0.0f) * Scale(carBodyL, uBottomH, carBodyW),
@@ -879,19 +920,20 @@ void car_doors_and_handles(const mat4& Mcar)
 	mat4 MdPos = car_door_matrix_posZ(Mcar);
 	mat4 MdNeg = car_door_matrix_negZ(Mcar);
 
+
+	CarPaintMat p = currentCarPaint();
 	// doors
 	drawCubeNow(MdPos * Scale(doorL, doorH, doorT),
-		color4(0.18, 0.06, 0.06, 1.0),
-		color4(0.90, 0.22, 0.22, 1.0),
-		color4(0.7, 0.7, 0.7, 1.0),
-		48.0f);
+		p.ka,
+		p.kd,
+		p.ks,
+		p.sh);
 
 	drawCubeNow(MdNeg * Scale(doorL, doorH, doorT),
-		color4(0.18, 0.06, 0.06, 1.0),
-		color4(0.90, 0.22, 0.22, 1.0),
-		color4(0.7, 0.7, 0.7, 1.0),
-		48.0f);
-
+		p.ka,
+		p.kd,
+		p.ks,
+		p.sh);
 	// handles
 	const float handleLocalX = -0.20f;
 	const float handleLocalY = 0.00f;
@@ -976,7 +1018,7 @@ void car_wheels_cube(const mat4& Mcar)
 // ---------- MAIN ----------
 void drawCar()
 {
-	mat4 Mcar = carBaseMatrix();
+	mat4 Mcar = carBaseMatrix(carX, carY, carZ, carHeading,  carScale);
 
 	// Không bind VAO ở đây.
 	// Vì bạn đang dùng cùng 1 VAO/VBO duy nhất cho cả scene.
@@ -988,6 +1030,112 @@ void drawCar()
 	car_seat(Mcar);
 	car_wheels_cube(Mcar);
 }
+
+
+// ===================== SHELF CORNER (WOOD) + SHOWCASE (ADDED) =====================
+// Kệ gỗ đặt ở góc sau-trái (gần tường trái x=-3.03 và tường sau z=-6.05)
+const vec3  SHELF_BASE(0, -1.475f, -5.55f); // tâm đáy kệ nằm trên sàn
+const float SHELF_W = 3.60f;
+const float SHELF_D = 0.70f;
+const float SHELF_H = 2.20f;
+const float SHELF_T = 0.05f;
+
+void drawShelf()
+{
+	// vật liệu gỗ
+	color4 woodKa(0.18, 0.10, 0.05, 1.0);
+	color4 woodKd(0.60, 0.38, 0.18, 1.0);
+	color4 woodKs(0.10, 0.10, 0.10, 1.0);
+	float  woodSh = 18.0f;
+
+	// 2 vách bên
+	drawCubeNow(
+		Translate(SHELF_BASE) *
+		Translate(-(SHELF_W * 0.5f - SHELF_T * 0.5f), SHELF_H * 0.5f, 0.0f) *
+		Scale(SHELF_T, SHELF_H, SHELF_D),
+		woodKa, woodKd, woodKs, woodSh
+	);
+	drawCubeNow(
+		Translate(SHELF_BASE) *
+		Translate(+(SHELF_W * 0.5f - SHELF_T * 0.5f), SHELF_H * 0.5f, 0.0f) *
+		Scale(SHELF_T, SHELF_H, SHELF_D),
+		woodKa, woodKd, woodKs, woodSh
+	);
+
+	// lưng kệ
+	drawCubeNow(
+		Translate(SHELF_BASE) *
+		Translate(0.0f, SHELF_H * 0.5f, -(SHELF_D * 0.5f - SHELF_T * 0.5f)) *
+		Scale(SHELF_W, SHELF_H, SHELF_T),
+		woodKa, woodKd, woodKs, woodSh
+	);
+
+	// các mặt kệ (3 tầng + nóc)
+	float shelfY[4] = { 0.10f, 0.75f, 1.40f, 2.05f };
+	for (int i = 0; i < 4; ++i)
+	{
+		drawCubeNow(
+			Translate(SHELF_BASE) *
+			Translate(0.0f, shelfY[i], 0.0f) *
+			Scale(SHELF_W - 2.0f * SHELF_T, SHELF_T, SHELF_D - SHELF_T),
+			woodKa, woodKd, woodKs, woodSh
+		);
+	}
+}
+
+// vẽ 1 xe với màu sơn (paintIdx)
+void drawCarAt(float x, float y, float z, float headingDeg, float scale, int paintIdx)
+{
+	// paintIdx sẽ được dùng trong car_body_U + car_doors_and_handles (xem phần CAR PAINT ở trên)
+	extern int gCarPaintIdx;
+	gCarPaintIdx = paintIdx;
+
+	mat4 Mcar = carBaseMatrix(x, y, z, headingDeg, scale);
+	car_body_U(Mcar);
+	car_doors_and_handles(Mcar);
+	car_windshield(Mcar);
+	car_rear_panel(Mcar);
+	car_lights(Mcar);
+	car_seat(Mcar);
+	car_wheels_cube(Mcar);
+}
+void drawShowcaseCarsOnShelf()
+{
+	// 4 tầng (đúng như bạn đang dùng trong kệ)
+	float levelY[4] = { 0.10f, 0.75f, 1.40f, 2.05f };
+
+	const int carsPerRow = 5;
+
+	// Phần bề ngang “lọt lòng” của kệ để đặt xe (trừ độ dày vách + chừa mép)
+	float margin = 0.20f; // chừa mép trái/phải để xe không chạm vách (tùy chỉnh)
+	float innerW = (SHELF_W - 2.0f * SHELF_T) - 2.0f * margin;
+
+	// vị trí Z của xe (đưa ra trước một chút)
+	float zFront = +0.10f;
+
+	// scale xe (nếu chật, giảm xuống 0.18f)
+	float carScaleShow = 0.20f;
+
+	for (int level = 0; level < 4; ++level)
+	{
+		for (int j = 0; j < carsPerRow; ++j)
+		{
+			// chia đều 5 xe theo chiều ngang kệ
+			float t = (j + 0.5f) / (float)carsPerRow;   // 0..1
+			float xLocal = -innerW * 0.5f + t * innerW; // tâm xe theo trục X (local)
+
+			float x = SHELF_BASE.x + xLocal;
+			float y = SHELF_BASE.y + levelY[level] + 0.12f;
+			float z = SHELF_BASE.z + zFront;
+
+			// đổi màu: chạy vòng theo bảng gCarPaints
+			int paintIdx = (level * carsPerRow + j) % kNumCarPaints;
+
+			drawCarAt(x, y, z, 180.0f, carScaleShow, paintIdx);
+		}
+	}
+}
+// =================== END SHELF CORNER (WOOD) + SHOWCASE (ADDED) ===================
 
 void display(void)
 {
@@ -1010,7 +1158,7 @@ void display(void)
 
 	//light internal
 	if (!inlight) {
-		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0); 
+		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);
 
 		if (!inday) light_diffuse = vec4(0.9, 0.9, 0.9, 1.0);
 	}
@@ -1026,6 +1174,10 @@ void display(void)
 	ceilingFan();
 	airConditioner();
 	banthungan();
+	// ===== Shelf corner + showcase cars (ADDED) =====
+	drawShelf();
+	drawShowcaseCarsOnShelf();
+
 	drawCar();
 
 	glutSwapBuffers();
@@ -1335,7 +1487,7 @@ int main(int argc, char** argv)
 
 	glutReshapeFunc(reshape);
 	glutTimerFunc(0, timer, 0);
-	
+
 	Instructor();
 	glutMainLoop();
 	return 0;
