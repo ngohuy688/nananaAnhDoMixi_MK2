@@ -639,6 +639,359 @@ void drawRoom()
 	light_diffuse = tmp;
 }
 
+<<<<<<< HEAD
+void drawCubeNow(const mat4& M,
+	color4 ka, color4 kd, color4 ks, float shininess)
+{
+	setMaterial(ka, kd, ks, shininess);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, M);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints); // 36 đỉnh cube
+}
+// ====== Wheel cylinder approximation (dùng cube xoay vòng như động cơ quạt) ======
+void drawWheelCylinderLikeFan(const mat4& Mwheel,
+	float radius,     // bán kính bánh
+	float thickness,  // độ dày bánh (theo trục Z local)
+	float wall,       // độ dày thành lốp
+	int slices)       // số lát (càng nhiều càng tròn)
+{
+	// vật liệu lốp
+	color4 ka(0.05, 0.05, 0.05, 1.0);
+	color4 kd(0.15, 0.15, 0.15, 1.0);
+	color4 ks(0.25, 0.25, 0.25, 1.0);
+	float  sh = 24.0f;
+
+	float step = 360.0f / (float)slices;
+
+	// độ dài mỗi đoạn theo chu vi (xấp xỉ)
+	float segLen = 2.0f * 3.1415926f * radius / (float)slices;
+
+	// 1) Thành lốp (vòng ngoài)
+	for (float a = 0.0f; a < 360.0f; a += step)
+	{
+		mat4 seg =
+			Mwheel
+			* RotateZ(a)
+			* Translate(radius, 0.0f, 0.0f)
+			* RotateZ(90.0f)                  // cho cạnh dài nằm theo tiếp tuyến
+			* Scale(segLen, wall, thickness);
+
+		drawCubeNow(seg, ka, kd, ks, sh);
+	}
+
+	// 2) Mâm (hub) ở giữa
+	color4 hka(0.08, 0.08, 0.08, 1.0);
+	color4 hkd(0.25, 0.25, 0.25, 1.0);
+	color4 hks(0.40, 0.40, 0.40, 1.0);
+
+	float hubR = radius * 0.45f;
+	float hubWall = wall * 1.3f;
+	float hubSegLen = 2.0f * 3.1415926f * hubR / (float)slices;
+
+	for (float a = 0.0f; a < 360.0f; a += step)
+	{
+		mat4 seg =
+			Mwheel
+			* RotateZ(a)
+			* Translate(hubR, 0.0f, 0.0f)
+			* RotateZ(90.0f)
+			* Scale(hubSegLen, hubWall, thickness * 0.9f);
+
+		drawCubeNow(seg, hka, hkd, hks, 48.0f);
+	}
+
+	// 3) Nút giữa
+	drawCubeNow(
+		Mwheel * Scale(radius * 0.25f, radius * 0.25f, thickness * 1.05f),
+		color4(0.10, 0.10, 0.10, 1.0),
+		color4(0.35, 0.35, 0.35, 1.0),
+		color4(0.8, 0.8, 0.8, 1.0),
+		64.0f
+	);
+}
+
+// -------- Car state --------
+float carX = 0.0f;
+float carY = -1.0f;
+float carZ = -1.2f;
+
+float carHeading = 0.0f;     // deg
+float carSteer = 0.0f;       // deg
+float carWheelSpin = 0.0f;   // deg
+float carScale = 1.0f;
+
+// -------- Door state --------
+float carDoorAngle = 0.0f;
+bool  carDoorAuto = false;
+bool  carDoorOpening = false;
+const float carDoorMax = 60.0f;
+const float carDoorAnimSpeed = 2.0f;
+
+// -------- Car dimensions --------
+const float carBodyL = 2.6f;
+const float carBodyH = 0.45f;
+const float carBodyW = 1.0f;
+
+// U-body params (silhouette chữ U)
+const float uBottomH = 0.16f;
+const float uSideH = carBodyH - uBottomH;
+const float uLeftL = 1.10f;
+const float uRightL = 0.85f;
+
+mat4 carBaseMatrix()
+{
+	return Translate(carX, carY, carZ)
+		* RotateY(carHeading)
+		* Scale(carScale, carScale, carScale);
+}
+
+// ---------- PART 1: body chữ U ----------
+void car_body_U(const mat4& Mcar)
+{
+	color4 ka(0.18, 0.05, 0.05, 1.0);
+	color4 kd(0.85, 0.10, 0.10, 1.0);
+	color4 ks(0.9, 0.9, 0.9, 1.0);
+	float  sh = 64.0f;
+
+	float yBottom = -carBodyH * 0.5f + uBottomH * 0.5f;
+	drawCubeNow(Mcar * Translate(0.0f, yBottom, 0.0f) * Scale(carBodyL, uBottomH, carBodyW),
+		ka, kd, ks, sh);
+
+	float ySide = -carBodyH * 0.5f + uBottomH + uSideH * 0.5f;
+
+	float xLeftCenter = -carBodyL * 0.5f + uLeftL * 0.5f;
+	drawCubeNow(Mcar * Translate(xLeftCenter, ySide, 0.0f) * Scale(uLeftL, uSideH, carBodyW),
+		ka, kd, ks, sh);
+
+	float xRightCenter = +carBodyL * 0.5f - uRightL * 0.5f;
+	drawCubeNow(Mcar * Translate(xRightCenter, ySide, 0.0f) * Scale(uRightL, uSideH, carBodyW),
+		ka, kd, ks, sh);
+}
+
+// ---------- PART 2: kính trước ----------
+void car_windshield(const mat4& Mcar)
+{
+	const float topBodyY = carBodyH * 0.5f;
+	const float glassH = 0.42f;
+	const float glassY = topBodyY + glassH * 0.5f;
+	const float glassX = 0.55f;
+	const float glassTilt = +28.0f;
+
+	drawCubeNow(
+		Mcar * Translate(glassX, glassY, 0.0f) * RotateZ(glassTilt) * Scale(0.05f, glassH, 0.95f),
+		color4(0.02, 0.06, 0.08, 1.0),
+		color4(0.20, 0.65, 0.95, 1.0),
+		color4(0.9, 0.9, 0.9, 1.0),
+		80.0f
+	);
+}
+
+// ---------- PART 3: panel sau ----------
+void car_rear_panel(const mat4& Mcar)
+{
+	const float topBodyY = carBodyH * 0.5f;
+	const float backH = 0.20f;
+	const float backY = topBodyY + backH * 0.5f;
+	const float backX = -0.50f;
+
+	drawCubeNow(
+		Mcar * Translate(backX, backY, 0.0f) * Scale(0.06f, backH, 0.95f),
+		color4(0.02, 0.02, 0.02, 1.0),
+		color4(0.10, 0.10, 0.10, 1.0),
+		color4(0.2, 0.2, 0.2, 1.0),
+		16.0f
+	);
+}
+
+// ---------- PART 4: đèn ----------
+void car_lights(const mat4& Mcar)
+{
+	// Headlights
+	drawCubeNow(Mcar * Translate(+1.30f, 0.02f, +0.33f) * Scale(0.10f, 0.10f, 0.18f),
+		color4(0.20, 0.18, 0.05, 1.0),
+		color4(1.00, 0.90, 0.25, 1.0),
+		color4(1, 1, 1, 1),
+		64.0f);
+
+	drawCubeNow(Mcar * Translate(+1.30f, 0.02f, -0.33f) * Scale(0.10f, 0.10f, 0.18f),
+		color4(0.20, 0.18, 0.05, 1.0),
+		color4(1.00, 0.90, 0.25, 1.0),
+		color4(1, 1, 1, 1),
+		64.0f);
+
+	// Tail lights
+	drawCubeNow(Mcar * Translate(-1.30f, 0.02f, +0.33f) * Scale(0.10f, 0.10f, 0.18f),
+		color4(0.12, 0.02, 0.02, 1.0),
+		color4(0.70, 0.00, 0.00, 1.0),
+		color4(0.6, 0.6, 0.6, 1),
+		32.0f);
+
+	drawCubeNow(Mcar * Translate(-1.30f, 0.02f, -0.33f) * Scale(0.10f, 0.10f, 0.18f),
+		color4(0.12, 0.02, 0.02, 1.0),
+		color4(0.70, 0.00, 0.00, 1.0),
+		color4(0.6, 0.6, 0.6, 1),
+		32.0f);
+}
+
+// ---------- PART 5: cửa + tay nắm ----------
+mat4 car_door_matrix_posZ(const mat4& Mcar)
+{
+	const float doorL = 1.15f;
+	const float doorT = 0.06f;
+
+	const float doorH = uSideH * 0.90f;
+	const float ySideBase = -carBodyH * 0.5f + uBottomH;
+	const float doorY = ySideBase + doorH * 0.5f;
+
+	const float doorZ = carBodyW * 0.5f + doorT * 0.5f;
+	const float doorCenterX = 0.10f;
+	const float hingeX = doorCenterX + doorL * 0.5f;
+
+	return Mcar
+		* Translate(hingeX, doorY, +doorZ)
+		* RotateY(+carDoorAngle)
+		* Translate(-doorL * 0.5f, 0.0f, 0.0f);
+}
+
+mat4 car_door_matrix_negZ(const mat4& Mcar)
+{
+	const float doorL = 1.15f;
+	const float doorT = 0.06f;
+
+	const float doorH = uSideH * 0.90f;
+	const float ySideBase = -carBodyH * 0.5f + uBottomH;
+	const float doorY = ySideBase + doorH * 0.5f;
+
+	const float doorZ = carBodyW * 0.5f + doorT * 0.5f;
+	const float doorCenterX = 0.10f;
+	const float hingeX = doorCenterX + doorL * 0.5f;
+
+	return Mcar
+		* Translate(hingeX, doorY, -doorZ)
+		* RotateY(-carDoorAngle)
+		* Translate(-doorL * 0.5f, 0.0f, 0.0f);
+}
+
+void car_doors_and_handles(const mat4& Mcar)
+{
+	const float doorL = 1.15f;
+	const float doorT = 0.06f;
+	const float doorH = uSideH * 0.90f;
+
+	mat4 MdPos = car_door_matrix_posZ(Mcar);
+	mat4 MdNeg = car_door_matrix_negZ(Mcar);
+
+	// doors
+	drawCubeNow(MdPos * Scale(doorL, doorH, doorT),
+		color4(0.18, 0.06, 0.06, 1.0),
+		color4(0.90, 0.22, 0.22, 1.0),
+		color4(0.7, 0.7, 0.7, 1.0),
+		48.0f);
+
+	drawCubeNow(MdNeg * Scale(doorL, doorH, doorT),
+		color4(0.18, 0.06, 0.06, 1.0),
+		color4(0.90, 0.22, 0.22, 1.0),
+		color4(0.7, 0.7, 0.7, 1.0),
+		48.0f);
+
+	// handles
+	const float handleLocalX = -0.20f;
+	const float handleLocalY = 0.00f;
+	const float handleOut = doorT * 0.5f + 0.03f;
+
+	drawCubeNow(MdPos * Translate(handleLocalX, handleLocalY, +handleOut) * Scale(0.10f, 0.05f, 0.05f),
+		color4(0.15, 0.15, 0.05, 1.0),
+		color4(0.95, 0.85, 0.20, 1.0),
+		color4(1.0, 1.0, 1.0, 1.0),
+		96.0f);
+
+	drawCubeNow(MdNeg * Translate(handleLocalX, handleLocalY, -handleOut) * Scale(0.10f, 0.05f, 0.05f),
+		color4(0.15, 0.15, 0.05, 1.0),
+		color4(0.95, 0.85, 0.20, 1.0),
+		color4(1.0, 1.0, 1.0, 1.0),
+		96.0f);
+}
+
+// ---------- PART 6: ghế ----------
+void car_seat(const mat4& Mcar)
+{
+	color4 ka(0.05, 0.05, 0.05, 1.0);
+	color4 kd(0.12, 0.12, 0.12, 1.0);
+	color4 ks(0.20, 0.20, 0.20, 1.0);
+	float  sh = 24.0f;
+
+	float yBottomTop = (-carBodyH * 0.5f) + uBottomH;
+	float ySeat = yBottomTop + 0.06f;
+
+	float seatW = 0.22f, seatL = 0.35f, seatH = 0.10f;
+	float backH = 0.28f, backT = 0.08f;
+
+	float xSeat = 0.1f;
+	float zOff = 0.22f;
+
+	auto drawOneSeat = [&](float z)
+		{
+			drawCubeNow(Mcar * Translate(xSeat, ySeat + seatH * 0.5f, z) * Scale(seatL, seatH, seatW),
+				ka, kd, ks, sh);
+
+			float xBack = xSeat - seatL * 0.35f;
+			float yBack = ySeat + seatH + backH * 0.5f;
+
+			drawCubeNow(Mcar * Translate(xBack, yBack, z) * Scale(backT, backH, seatW),
+				ka, kd, ks, sh);
+		};
+
+	drawOneSeat(+zOff);
+	drawOneSeat(-zOff);
+}
+
+// ---------- PART 7: bánh xe (tạm bằng cube để chạy chắc) ----------
+void car_wheels_cube(const mat4& Mcar)
+{
+	const float xFront = 0.95f, xRear = -0.95f;
+	const float yWheel = -0.25f;
+	const float zLeft = 0.48f, zRight = -0.48f;
+
+	// Thông số bánh
+	const float R = 0.22f;      // bán kính
+	const float T = 0.12f;      // độ dày bánh
+	const float wall = 0.05f;   // độ dày thành lốp
+	const int slices = 28;      // tăng lên 36/48 nếu muốn tròn hơn
+
+	// Giữ đúng logic quay hiện tại của bạn:
+	// steer theo Y, spin theo Z
+	mat4 FrontRot = RotateY(carSteer) * RotateZ(carWheelSpin);
+	mat4 RearRot = RotateZ(carWheelSpin);
+
+	auto drawOne = [&](float x, float y, float z, const mat4& Rmat)
+		{
+			mat4 Mwheel = Mcar * Translate(x, y, z) * Rmat;
+			drawWheelCylinderLikeFan(Mwheel, R, T, wall, slices);
+		};
+
+	drawOne(xFront, yWheel, zLeft, FrontRot);
+	drawOne(xFront, yWheel, zRight, FrontRot);
+	drawOne(xRear, yWheel, zLeft, RearRot);
+	drawOne(xRear, yWheel, zRight, RearRot);
+}
+
+// ---------- MAIN ----------
+void drawCar()
+{
+	mat4 Mcar = carBaseMatrix();
+
+	// Không bind VAO ở đây.
+	// Vì bạn đang dùng cùng 1 VAO/VBO duy nhất cho cả scene.
+	car_body_U(Mcar);
+	car_doors_and_handles(Mcar);
+	car_windshield(Mcar);
+	car_rear_panel(Mcar);
+	car_lights(Mcar);
+	car_seat(Mcar);
+	car_wheels_cube(Mcar);
+}
+
+=======
+>>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 void display(void)
 {
 	glClearColor(sky_red, sky_green, sky_blue, 1);
@@ -676,6 +1029,7 @@ void display(void)
 	ceilingFan();
 	airConditioner();
 	banthungan();
+>>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 
 	glutSwapBuffers();
 }
@@ -822,6 +1176,69 @@ void keyboard(unsigned char key, int x, int y)
 	case 'q':
 		ceilingFan_level = (ceilingFan_level + 1) % 4;
 		break;
+<<<<<<< HEAD
+		// ===== CAR CONTROLS =====
+	case 'f': case 'F':
+		carHeading += 5.0f;
+		break;
+
+	case 'h': case 'H':
+		carHeading -= 5.0f;
+		break;
+
+	case 't': case 'T': {
+		float rad = carHeading * DegreesToRadians;
+		carX += 0.10f * cos(rad);
+		carZ -= 0.10f * sin(rad);
+		carWheelSpin -= 12.0f;
+
+		// (tuỳ chọn) giới hạn vòng quay tránh tràn số
+		if (carWheelSpin < -360.0f) carWheelSpin += 360.0f;
+		break;
+	}
+
+	case 'g': case 'G': {
+		float rad = carHeading * DegreesToRadians;
+		carX -= 0.10f * cos(rad);
+		carZ += 0.10f * sin(rad);
+		carWheelSpin += 12.0f;
+
+		if (carWheelSpin > 360.0f) carWheelSpin -= 360.0f;
+		break;
+	}
+
+	case 'n': case 'N':
+		carSteer += 4.0f;
+		if (carSteer > 30.0f) carSteer = 30.0f;
+		break;
+
+	case 'm': case 'M':
+		carSteer -= 4.0f;
+		if (carSteer < -30.0f) carSteer = -30.0f;
+		break;
+
+	case '1':
+		// auto: nếu đang đóng/nửa đóng => mở, còn lại => đóng
+		carDoorOpening = (carDoorAngle < (carDoorMax * 0.5f));
+		carDoorAuto = true;
+		break;
+
+	case '2':
+		// mở thêm từng bước
+		carDoorAuto = false;
+		carDoorAngle += 5.0f;
+		if (carDoorAngle > carDoorMax) carDoorAngle = carDoorMax;
+		break;
+
+	case '3':
+		// đóng bớt từng bước
+		carDoorAuto = false;
+		carDoorAngle -= 5.0f;
+		if (carDoorAngle < 0.0f) carDoorAngle = 0.0f;
+		break;
+
+=======
+>>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 	}
 }
 
@@ -845,6 +1262,30 @@ void timer(int)
 
 	glutPostRedisplay();                 // gọi vẽ lại
 	glutTimerFunc(1000 / 60, timer, 0); // lặp lại mỗi 16ms
+<<<<<<< HEAD
+	if (carDoorAuto)
+	{
+		if (carDoorOpening)
+		{
+			carDoorAngle += carDoorAnimSpeed;
+			if (carDoorAngle >= carDoorMax)
+			{
+				carDoorAngle = carDoorMax;
+				carDoorAuto = false;
+			}
+		}
+		else
+		{
+			carDoorAngle -= carDoorAnimSpeed;
+			if (carDoorAngle <= 0.0f)
+			{
+				carDoorAngle = 0.0f;
+				carDoorAuto = false;
+			}
+		}
+	}
+=======
+>>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 }
 
 void Instructor() {
@@ -856,6 +1297,16 @@ void Instructor() {
 	cout << "Dong cua : p \n";
 	cout << "Bat camera : c \n";
 	cout << "Chuyen sang goc nhin camera : v, an lan nua de ve lai goc nhin ban dau \n";
+<<<<<<< HEAD
+	cout << "==============CAR (NEW)================== \n";
+	cout << "F/H: quay xe trai/phai\n";
+	cout << "T/G: xe tien/lui\n";
+	cout << "N/M: danh lai trai/phai\n";
+	cout << "1: auto mo/dong cua xe\n";
+	cout << "2: mo cua xe them (step)\n";
+	cout << "3: dong cua xe (step)\n";
+=======
+>>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 }
 
 
