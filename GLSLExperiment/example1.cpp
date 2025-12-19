@@ -435,7 +435,7 @@ void drawDoor()
 
 // Bàn thu ngân
 mat4 pos_model;
-float cashDrawerOpenAmount = 1.0f;   // biến điều khiển ngăn kéo
+float cashDrawerOpenAmount = 0;   // biến điều khiển ngăn kéo
 
 // vẽ ngăn kéo đựng tiền
 void drawCashDrawer() {
@@ -639,7 +639,6 @@ void drawRoom()
 	light_diffuse = tmp;
 }
 
-<<<<<<< HEAD
 void drawCubeNow(const mat4& M,
 	color4 ka, color4 kd, color4 ks, float shininess)
 {
@@ -990,8 +989,6 @@ void drawCar()
 	car_wheels_cube(Mcar);
 }
 
-=======
->>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 void display(void)
 {
 	glClearColor(sky_red, sky_green, sky_blue, 1);
@@ -1029,7 +1026,7 @@ void display(void)
 	ceilingFan();
 	airConditioner();
 	banthungan();
->>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
+	drawCar();
 
 	glutSwapBuffers();
 }
@@ -1176,7 +1173,6 @@ void keyboard(unsigned char key, int x, int y)
 	case 'q':
 		ceilingFan_level = (ceilingFan_level + 1) % 4;
 		break;
-<<<<<<< HEAD
 		// ===== CAR CONTROLS =====
 	case 'f': case 'F':
 		carHeading += 5.0f;
@@ -1236,9 +1232,6 @@ void keyboard(unsigned char key, int x, int y)
 		carDoorAngle -= 5.0f;
 		if (carDoorAngle < 0.0f) carDoorAngle = 0.0f;
 		break;
-
-=======
->>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 	}
 }
 
@@ -1262,7 +1255,6 @@ void timer(int)
 
 	glutPostRedisplay();                 // gọi vẽ lại
 	glutTimerFunc(1000 / 60, timer, 0); // lặp lại mỗi 16ms
-<<<<<<< HEAD
 	if (carDoorAuto)
 	{
 		if (carDoorOpening)
@@ -1284,8 +1276,6 @@ void timer(int)
 			}
 		}
 	}
-=======
->>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 }
 
 void Instructor() {
@@ -1297,7 +1287,6 @@ void Instructor() {
 	cout << "Dong cua : p \n";
 	cout << "Bat camera : c \n";
 	cout << "Chuyen sang goc nhin camera : v, an lan nua de ve lai goc nhin ban dau \n";
-<<<<<<< HEAD
 	cout << "==============CAR (NEW)================== \n";
 	cout << "F/H: quay xe trai/phai\n";
 	cout << "T/G: xe tien/lui\n";
@@ -1305,8 +1294,6 @@ void Instructor() {
 	cout << "1: auto mo/dong cua xe\n";
 	cout << "2: mo cua xe them (step)\n";
 	cout << "3: dong cua xe (step)\n";
-=======
->>>>>>> 7f187d73b993052361a4caa5d5021ed5cb580a5c
 }
 
 
