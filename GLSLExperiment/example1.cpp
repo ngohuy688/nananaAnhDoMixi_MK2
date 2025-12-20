@@ -985,7 +985,7 @@ void car_seat(const mat4& Mcar)
 	drawOneSeat(-zOff);
 }
 
-// ---------- PART 7: bánh xe (tạm bằng cube để chạy chắc) ----------
+// ---------- PART 7: bánh xe ----------
 void car_wheels_cube(const mat4& Mcar)
 {
 	const float xFront = 0.95f, xRear = -0.95f;
@@ -1020,8 +1020,6 @@ void drawCar()
 {
 	mat4 Mcar = carBaseMatrix(carX, carY, carZ, carHeading,  carScale);
 
-	// Không bind VAO ở đây.
-	// Vì bạn đang dùng cùng 1 VAO/VBO duy nhất cho cả scene.
 	car_body_U(Mcar);
 	car_doors_and_handles(Mcar);
 	car_windshield(Mcar);
@@ -1037,7 +1035,7 @@ void drawCar()
 const vec3  SHELF_BASE(0, -1.475f, -5.55f); // tâm đáy kệ nằm trên sàn
 const float SHELF_W = 3.60f;
 const float SHELF_D = 0.70f;
-const float SHELF_H = 2.20f;
+const float SHELF_H = 1.60f;
 const float SHELF_T = 0.05f;
 
 void drawShelf()
@@ -1071,8 +1069,8 @@ void drawShelf()
 	);
 
 	// các mặt kệ (3 tầng + nóc)
-	float shelfY[4] = { 0.10f, 0.75f, 1.40f, 2.05f };
-	for (int i = 0; i < 4; ++i)
+	float shelfY[4] = { 0.10f, 0.75f, 1.40f };
+	for (int i = 0; i < 3; ++i)
 	{
 		drawCubeNow(
 			Translate(SHELF_BASE) *
@@ -1101,13 +1099,12 @@ void drawCarAt(float x, float y, float z, float headingDeg, float scale, int pai
 }
 void drawShowcaseCarsOnShelf()
 {
-	// 4 tầng (đúng như bạn đang dùng trong kệ)
-	float levelY[4] = { 0.10f, 0.75f, 1.40f, 2.05f };
+\
+	float levelY[4] = { 0.10f, 0.75f, 1.40f };
 
-	const int carsPerRow = 5;
+	const int carsPerRow = 3;
 
-	// Phần bề ngang “lọt lòng” của kệ để đặt xe (trừ độ dày vách + chừa mép)
-	float margin = 0.20f; // chừa mép trái/phải để xe không chạm vách (tùy chỉnh)
+	float margin = 0.20f; 
 	float innerW = (SHELF_W - 2.0f * SHELF_T) - 2.0f * margin;
 
 	// vị trí Z của xe (đưa ra trước một chút)
@@ -1116,7 +1113,7 @@ void drawShowcaseCarsOnShelf()
 	// scale xe (nếu chật, giảm xuống 0.18f)
 	float carScaleShow = 0.20f;
 
-	for (int level = 0; level < 4; ++level)
+	for (int level = 0; level < 3; ++level)
 	{
 		for (int j = 0; j < carsPerRow; ++j)
 		{
