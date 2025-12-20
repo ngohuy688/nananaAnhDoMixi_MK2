@@ -173,7 +173,7 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 }
 // vẽ block tĩnh
 mat4 PosBlock;
-void drawPosBlock(vec3 pos, vec3 size)
+void drawPosBlock(vec3& pos, vec3& size)
 {
 	PosBlock = Translate(pos) * Scale(size);
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, PosBlock);
@@ -184,7 +184,7 @@ void drawPosBlock(vec3 pos, vec3 size)
 mat4 ceilingFan_cmt;
 mat4 ceilingFan_model;
 float ceilingFan_angle=0;
-float ceilingFan_levels[4] = { 0, 10, 20, 30};
+float ceilingFan_levels[4] = {0, 10, 20, 30};
 int ceilingFan_level = 0;
 float ceilingFan_v = 0;
 
@@ -246,6 +246,22 @@ void ceilingFan()
 
 	ceilingFan_cmt *= RotateY(ceilingFan_angle);
 	propeller();
+}
+void ceilingFanSpeedControl() {
+	if (ceilingFan_v < ceilingFan_levels[ceilingFan_level])
+		ceilingFan_v += 0.1f;
+
+	if (ceilingFan_level == 0)
+	{
+		ceilingFan_v -= 0.15f;
+		if (ceilingFan_v < 0)
+			ceilingFan_v = 0;
+	}
+
+	ceilingFan_angle += ceilingFan_v;
+
+	if (ceilingFan_angle > 360)
+		ceilingFan_angle -= 360;
 }
 
 // điều hòa
@@ -1238,23 +1254,8 @@ void keyboard(unsigned char key, int x, int y)
 void timer(int)
 {
 	// tính tốc độ quay của quạt
-	if (ceilingFan_v < ceilingFan_levels[ceilingFan_level])
-		ceilingFan_v += 0.1f;
-
-	if (ceilingFan_level == 0)
-	{
-		ceilingFan_v -= 0.15f;
-		if (ceilingFan_v < 0)
-			ceilingFan_v = 0;
-	}
-
-	ceilingFan_angle += ceilingFan_v;
-
-	if (ceilingFan_angle > 360)
-		ceilingFan_angle -= 360;
-
-	glutPostRedisplay();                 // gọi vẽ lại
-	glutTimerFunc(1000 / 60, timer, 0); // lặp lại mỗi 16ms
+	ceilingFanSpeedControl();
+	// cửa xe
 	if (carDoorAuto)
 	{
 		if (carDoorOpening)
@@ -1276,6 +1277,24 @@ void timer(int)
 			}
 		}
 	}
+	glutPostRedisplay();                 // gọi vẽ lại
+	glutTimerFunc(1000 / 60, timer, 0); // 60 fps
+}
+
+void handleMouseMove(int x, int y) {
+	if (mouseLocked) {
+		int deltaX = x - midWindowX;
+		int deltaY = y - midWindowY;
+
+		yaw += deltaX * 0.001f;
+		pitch += deltaY * -0.001f;
+
+		if (pitch > 1.5f) pitch = 1.5f;
+		else if (pitch < -1.5) pitch = -1.5f;
+
+		glutWarpPointer(midWindowX, midWindowY);
+	}
+	glutPostRedisplay();
 }
 
 void Instructor() {
@@ -1294,23 +1313,6 @@ void Instructor() {
 	cout << "1: auto mo/dong cua xe\n";
 	cout << "2: mo cua xe them (step)\n";
 	cout << "3: dong cua xe (step)\n";
-}
-
-
-void handleMouseMove(int x, int y) {
-	if (mouseLocked) {
-		int deltaX = x - midWindowX;
-		int deltaY = y - midWindowY;
-
-		yaw += deltaX * 0.001f;
-		pitch += deltaY * -0.001f;
-
-		if (pitch > 1.5f) pitch = 1.5f;
-		else if (pitch < -1.5) pitch = -1.5f;
-
-		glutWarpPointer(midWindowX, midWindowY);
-	}
-	glutPostRedisplay();
 }
 
 int main(int argc, char** argv)
