@@ -663,10 +663,8 @@ void drawRoom()
 	light_diffuse = tmp;
 }
 
-void drawCubeNow(const mat4& M,
-	color4 ka, color4 kd, color4 ks, float shininess)
+void drawCubeNow(const mat4& M)
 {
-	setMaterial(ka, kd, ks, shininess);
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, M);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints); // 36 đỉnh cube
 }
@@ -678,13 +676,12 @@ void drawWheelCylinderLikeFan(const mat4& Mwheel,
 	int slices)       // số lát (càng nhiều càng tròn)
 {
 	// vật liệu lốp
-	color4 ka(0.05, 0.05, 0.05, 1.0);
-	color4 kd(0.15, 0.15, 0.15, 1.0);
-	color4 ks(0.25, 0.25, 0.25, 1.0);
-	float  sh = 24.0f;
+	setMaterial(color4(0.05, 0.05, 0.05, 1.0),
+				color4(0.15, 0.15, 0.15, 1.0),
+				color4(0.25, 0.25, 0.25, 1.0),
+				24.0f);
 
 	float step = 360.0f / (float)slices;
-
 	// độ dài mỗi đoạn theo chu vi (xấp xỉ)
 	float segLen = 2.0f * 3.1415926f * radius / (float)slices;
 
@@ -698,13 +695,14 @@ void drawWheelCylinderLikeFan(const mat4& Mwheel,
 			* RotateZ(90.0f)                  // cho cạnh dài nằm theo tiếp tuyến
 			* Scale(segLen, wall, thickness);
 
-		drawCubeNow(seg, ka, kd, ks, sh);
+		drawCubeNow(seg);
 	}
 
 	// 2) Mâm (hub) ở giữa
-	color4 hka(0.08, 0.08, 0.08, 1.0);
-	color4 hkd(0.25, 0.25, 0.25, 1.0);
-	color4 hks(0.40, 0.40, 0.40, 1.0);
+	setMaterial(color4(0.08, 0.08, 0.08, 1.0),
+				color4(0.25, 0.25, 0.25, 1.0),
+				color4(0.40, 0.40, 0.40, 1.0),
+				48.0f);
 
 	float hubR = radius * 0.45f;
 	float hubWall = wall * 1.3f;
@@ -719,17 +717,16 @@ void drawWheelCylinderLikeFan(const mat4& Mwheel,
 			* RotateZ(90.0f)
 			* Scale(hubSegLen, hubWall, thickness * 0.9f);
 
-		drawCubeNow(seg, hka, hkd, hks, 48.0f);
+		drawCubeNow(seg);
 	}
 
 	// 3) Nút giữa
+	setMaterial(color4(0.10, 0.10, 0.10, 1.0),
+				color4(0.35, 0.35, 0.35, 1.0),
+				color4(0.8, 0.8, 0.8, 1.0),
+				64.0f);
 	drawCubeNow(
-		Mwheel * Scale(radius * 0.25f, radius * 0.25f, thickness * 1.05f),
-		color4(0.10, 0.10, 0.10, 1.0),
-		color4(0.35, 0.35, 0.35, 1.0),
-		color4(0.8, 0.8, 0.8, 1.0),
-		64.0f
-	);
+		Mwheel * Scale(radius * 0.25f, radius * 0.25f, thickness * 1.05f));
 }
 
 // -------- Car state --------
@@ -810,24 +807,18 @@ mat4 carBaseMatrix(float carX, float carY, float carZ, float carHeading, float c
 void car_body_U(const mat4& Mcar)
 {
 	CarPaintMat p = currentCarPaint();
-	color4 ka = p.ka;
-	color4 kd = p.kd;
-	color4 ks = p.ks;
-	float  sh = p.sh;
 
+	setMaterial(p.ka, p.kd, p.ks, p.sh);
 	float yBottom = -carBodyH * 0.5f + uBottomH * 0.5f;
-	drawCubeNow(Mcar * Translate(0.0f, yBottom, 0.0f) * Scale(carBodyL, uBottomH, carBodyW),
-		ka, kd, ks, sh);
+	drawCubeNow(Mcar * Translate(0.0f, yBottom, 0.0f) * Scale(carBodyL, uBottomH, carBodyW));
 
 	float ySide = -carBodyH * 0.5f + uBottomH + uSideH * 0.5f;
 
 	float xLeftCenter = -carBodyL * 0.5f + uLeftL * 0.5f;
-	drawCubeNow(Mcar * Translate(xLeftCenter, ySide, 0.0f) * Scale(uLeftL, uSideH, carBodyW),
-		ka, kd, ks, sh);
+	drawCubeNow(Mcar * Translate(xLeftCenter, ySide, 0.0f) * Scale(uLeftL, uSideH, carBodyW));
 
 	float xRightCenter = +carBodyL * 0.5f - uRightL * 0.5f;
-	drawCubeNow(Mcar * Translate(xRightCenter, ySide, 0.0f) * Scale(uRightL, uSideH, carBodyW),
-		ka, kd, ks, sh);
+	drawCubeNow(Mcar * Translate(xRightCenter, ySide, 0.0f) * Scale(uRightL, uSideH, carBodyW));
 }
 
 // ---------- PART 2: kính trước ----------
@@ -839,13 +830,12 @@ void car_windshield(const mat4& Mcar)
 	const float glassX = 0.55f;
 	const float glassTilt = +28.0f;
 
+	setMaterial(color4(0.02, 0.06, 0.08, 1.0),
+				color4(0.20, 0.65, 0.95, 1.0),
+				color4(0.9, 0.9, 0.9, 1.0),
+				80.0f);
 	drawCubeNow(
-		Mcar * Translate(glassX, glassY, 0.0f) * RotateZ(glassTilt) * Scale(0.05f, glassH, 0.95f),
-		color4(0.02, 0.06, 0.08, 1.0),
-		color4(0.20, 0.65, 0.95, 1.0),
-		color4(0.9, 0.9, 0.9, 1.0),
-		80.0f
-	);
+		Mcar * Translate(glassX, glassY, 0.0f) * RotateZ(glassTilt) * Scale(0.05f, glassH, 0.95f));
 }
 
 // ---------- PART 3: panel sau ----------
@@ -856,43 +846,34 @@ void car_rear_panel(const mat4& Mcar)
 	const float backY = topBodyY + backH * 0.5f;
 	const float backX = -0.50f;
 
+	setMaterial(color4(0.02, 0.02, 0.02, 1.0),
+				color4(0.10, 0.10, 0.10, 1.0),
+				color4(0.2, 0.2, 0.2, 1.0),
+				16.0f);
 	drawCubeNow(
-		Mcar * Translate(backX, backY, 0.0f) * Scale(0.06f, backH, 0.95f),
-		color4(0.02, 0.02, 0.02, 1.0),
-		color4(0.10, 0.10, 0.10, 1.0),
-		color4(0.2, 0.2, 0.2, 1.0),
-		16.0f
-	);
+		Mcar * Translate(backX, backY, 0.0f) * Scale(0.06f, backH, 0.95f));
 }
 
 // ---------- PART 4: đèn ----------
 void car_lights(const mat4& Mcar)
 {
 	// Headlights
-	drawCubeNow(Mcar * Translate(+1.30f, 0.02f, +0.33f) * Scale(0.10f, 0.10f, 0.18f),
-		color4(0.20, 0.18, 0.05, 1.0),
-		color4(1.00, 0.90, 0.25, 1.0),
-		color4(1, 1, 1, 1),
-		64.0f);
+	setMaterial(color4(0.20, 0.18, 0.05, 1.0),
+				color4(1.00, 0.90, 0.25, 1.0),
+				color4(1, 1, 1, 1),
+				64.0f);
+	drawCubeNow(Mcar * Translate(+1.30f, 0.02f, +0.33f) * Scale(0.10f, 0.10f, 0.18f));
 
-	drawCubeNow(Mcar * Translate(+1.30f, 0.02f, -0.33f) * Scale(0.10f, 0.10f, 0.18f),
-		color4(0.20, 0.18, 0.05, 1.0),
-		color4(1.00, 0.90, 0.25, 1.0),
-		color4(1, 1, 1, 1),
-		64.0f);
+	drawCubeNow(Mcar * Translate(+1.30f, 0.02f, -0.33f) * Scale(0.10f, 0.10f, 0.18f));
 
 	// Tail lights
-	drawCubeNow(Mcar * Translate(-1.30f, 0.02f, +0.33f) * Scale(0.10f, 0.10f, 0.18f),
-		color4(0.12, 0.02, 0.02, 1.0),
-		color4(0.70, 0.00, 0.00, 1.0),
-		color4(0.6, 0.6, 0.6, 1),
-		32.0f);
+	setMaterial(color4(0.12, 0.02, 0.02, 1.0),
+				color4(0.70, 0.00, 0.00, 1.0),
+				color4(0.6, 0.6, 0.6, 1),
+				32.0f);
+	drawCubeNow(Mcar * Translate(-1.30f, 0.02f, +0.33f) * Scale(0.10f, 0.10f, 0.18f));
 
-	drawCubeNow(Mcar * Translate(-1.30f, 0.02f, -0.33f) * Scale(0.10f, 0.10f, 0.18f),
-		color4(0.12, 0.02, 0.02, 1.0),
-		color4(0.70, 0.00, 0.00, 1.0),
-		color4(0.6, 0.6, 0.6, 1),
-		32.0f);
+	drawCubeNow(Mcar * Translate(-1.30f, 0.02f, -0.33f) * Scale(0.10f, 0.10f, 0.18f));
 }
 
 // ---------- PART 5: cửa + tay nắm ----------
@@ -946,33 +927,22 @@ void car_doors_and_handles(const mat4& Mcar)
 
 	CarPaintMat p = currentCarPaint();
 	// doors
-	drawCubeNow(MdPos * Scale(doorL, doorH, doorT),
-		p.ka,
-		p.kd,
-		p.ks,
-		p.sh);
+	setMaterial(p.ka, p.kd, p.ks, p.sh);
+	drawCubeNow(MdPos * Scale(doorL, doorH, doorT));
 
-	drawCubeNow(MdNeg * Scale(doorL, doorH, doorT),
-		p.ka,
-		p.kd,
-		p.ks,
-		p.sh);
+	drawCubeNow(MdNeg * Scale(doorL, doorH, doorT));
 	// handles
 	const float handleLocalX = -0.20f;
 	const float handleLocalY = 0.00f;
 	const float handleOut = doorT * 0.5f + 0.03f;
 
-	drawCubeNow(MdPos * Translate(handleLocalX, handleLocalY, +handleOut) * Scale(0.10f, 0.05f, 0.05f),
-		color4(0.15, 0.15, 0.05, 1.0),
-		color4(0.95, 0.85, 0.20, 1.0),
-		color4(1.0, 1.0, 1.0, 1.0),
-		96.0f);
+	setMaterial(color4(0.15, 0.15, 0.05, 1.0),
+				color4(0.95, 0.85, 0.20, 1.0),
+				color4(1.0, 1.0, 1.0, 1.0),
+				96.0f);
+	drawCubeNow(MdPos * Translate(handleLocalX, handleLocalY, +handleOut) * Scale(0.10f, 0.05f, 0.05f));
 
-	drawCubeNow(MdNeg * Translate(handleLocalX, handleLocalY, -handleOut) * Scale(0.10f, 0.05f, 0.05f),
-		color4(0.15, 0.15, 0.05, 1.0),
-		color4(0.95, 0.85, 0.20, 1.0),
-		color4(1.0, 1.0, 1.0, 1.0),
-		96.0f);
+	drawCubeNow(MdNeg * Translate(handleLocalX, handleLocalY, -handleOut) * Scale(0.10f, 0.05f, 0.05f));
 }
 void car_door_auto() {
 	if (carDoorAuto)
@@ -1000,11 +970,6 @@ void car_door_auto() {
 // ---------- PART 6: ghế ----------
 void car_seat(const mat4& Mcar)
 {
-	color4 ka(0.05, 0.05, 0.05, 1.0);
-	color4 kd(0.12, 0.12, 0.12, 1.0);
-	color4 ks(0.20, 0.20, 0.20, 1.0);
-	float  sh = 24.0f;
-
 	float yBottomTop = (-carBodyH * 0.5f) + uBottomH;
 	float ySeat = yBottomTop + 0.06f;
 
@@ -1014,16 +979,18 @@ void car_seat(const mat4& Mcar)
 	float xSeat = 0.1f;
 	float zOff = 0.22f;
 
+	setMaterial(color4(0.05, 0.05, 0.05, 1.0),
+				color4(0.12, 0.12, 0.12, 1.0),
+				color4(0.20, 0.20, 0.20, 1.0),
+				24.0f);
 	auto drawOneSeat = [&](float z)
 		{
-			drawCubeNow(Mcar * Translate(xSeat, ySeat + seatH * 0.5f, z) * Scale(seatL, seatH, seatW),
-				ka, kd, ks, sh);
+			drawCubeNow(Mcar * Translate(xSeat, ySeat + seatH * 0.5f, z) * Scale(seatL, seatH, seatW));
 
 			float xBack = xSeat - seatL * 0.35f;
 			float yBack = ySeat + seatH + backH * 0.5f;
 
-			drawCubeNow(Mcar * Translate(xBack, yBack, z) * Scale(backT, backH, seatW),
-				ka, kd, ks, sh);
+			drawCubeNow(Mcar * Translate(xBack, yBack, z) * Scale(backT, backH, seatW));
 		};
 
 	drawOneSeat(+zOff);
@@ -1086,32 +1053,26 @@ const float SHELF_T = 0.05f;
 void drawShelf()
 {
 	// vật liệu gỗ
-	color4 woodKa(0.18, 0.10, 0.05, 1.0);
-	color4 woodKd(0.60, 0.38, 0.18, 1.0);
-	color4 woodKs(0.10, 0.10, 0.10, 1.0);
-	float  woodSh = 18.0f;
+	setMaterial(color4(0.18, 0.10, 0.05, 1.0),
+				color4(0.60, 0.38, 0.18, 1.0),
+				color4(0.10, 0.10, 0.10, 1.0),
+				18.0f);
 
 	// 2 vách bên
 	drawCubeNow(
 		Translate(SHELF_BASE) *
 		Translate(-(SHELF_W * 0.5f - SHELF_T * 0.5f), SHELF_H * 0.5f, 0.0f) *
-		Scale(SHELF_T, SHELF_H, SHELF_D),
-		woodKa, woodKd, woodKs, woodSh
-	);
+		Scale(SHELF_T, SHELF_H, SHELF_D));
 	drawCubeNow(
 		Translate(SHELF_BASE) *
 		Translate(+(SHELF_W * 0.5f - SHELF_T * 0.5f), SHELF_H * 0.5f, 0.0f) *
-		Scale(SHELF_T, SHELF_H, SHELF_D),
-		woodKa, woodKd, woodKs, woodSh
-	);
+		Scale(SHELF_T, SHELF_H, SHELF_D));
 
 	// lưng kệ
 	drawCubeNow(
 		Translate(SHELF_BASE) *
 		Translate(0.0f, SHELF_H * 0.5f, -(SHELF_D * 0.5f - SHELF_T * 0.5f)) *
-		Scale(SHELF_W, SHELF_H, SHELF_T),
-		woodKa, woodKd, woodKs, woodSh
-	);
+		Scale(SHELF_W, SHELF_H, SHELF_T));
 
 	// các mặt kệ (3 tầng + nóc)
 	float shelfY[4] = { 0.10f, 0.75f, 1.40f };
@@ -1120,9 +1081,7 @@ void drawShelf()
 		drawCubeNow(
 			Translate(SHELF_BASE) *
 			Translate(0.0f, shelfY[i], 0.0f) *
-			Scale(SHELF_W - 2.0f * SHELF_T, SHELF_T, SHELF_D - SHELF_T),
-			woodKa, woodKd, woodKs, woodSh
-		);
+			Scale(SHELF_W - 2.0f * SHELF_T, SHELF_T, SHELF_D - SHELF_T));
 	}
 }
 
