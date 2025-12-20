@@ -183,13 +183,10 @@ void drawPosBlock(vec3& pos, vec3& size)
 // vẽ quạt 
 mat4 ceilingFan_cmt;
 mat4 ceilingFan_model;
-<<<<<<< HEAD
+
 float ceilingFan_angle=0;
 float ceilingFan_levels[4] = {0, 10, 20, 30};
-=======
-float ceilingFan_angle = 0;
-float ceilingFan_levels[4] = { 0, 10, 20, 30 };
->>>>>>> 84e91615ac398450a6b0ce6f7cebb617bbaa885c
+
 int ceilingFan_level = 0;
 float ceilingFan_v = 0;
 
@@ -972,7 +969,29 @@ void car_doors_and_handles(const mat4& Mcar)
 		color4(1.0, 1.0, 1.0, 1.0),
 		96.0f);
 }
-
+void car_door_auto() {
+	if (carDoorAuto)
+	{
+		if (carDoorOpening)
+		{
+			carDoorAngle += carDoorAnimSpeed;
+			if (carDoorAngle >= carDoorMax)
+			{
+				carDoorAngle = carDoorMax;
+				carDoorAuto = false;
+			}
+		}
+		else
+		{
+			carDoorAngle -= carDoorAnimSpeed;
+			if (carDoorAngle <= 0.0f)
+			{
+				carDoorAngle = 0.0f;
+				carDoorAuto = false;
+			}
+		}
+	}
+}
 // ---------- PART 6: ghế ----------
 void car_seat(const mat4& Mcar)
 {
@@ -1413,27 +1432,7 @@ void timer(int)
 	// tính tốc độ quay của quạt
 	ceilingFanSpeedControl();
 	// cửa xe
-	if (carDoorAuto)
-	{
-		if (carDoorOpening)
-		{
-			carDoorAngle += carDoorAnimSpeed;
-			if (carDoorAngle >= carDoorMax)
-			{
-				carDoorAngle = carDoorMax;
-				carDoorAuto = false;
-			}
-		}
-		else
-		{
-			carDoorAngle -= carDoorAnimSpeed;
-			if (carDoorAngle <= 0.0f)
-			{
-				carDoorAngle = 0.0f;
-				carDoorAuto = false;
-			}
-		}
-	}
+	car_door_auto();
 	glutPostRedisplay();                 // gọi vẽ lại
 	glutTimerFunc(1000 / 60, timer, 0); // 60 fps
 }
@@ -1451,7 +1450,6 @@ void handleMouseMove(int x, int y) {
 
 		glutWarpPointer(midWindowX, midWindowY);
 	}
-	glutPostRedisplay();
 }
 
 void Instructor() {
