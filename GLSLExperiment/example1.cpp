@@ -171,14 +171,7 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product); //độ bóng
 	glUniform1f(glGetUniformLocation(program, "Shininess"), shininess); //độ sắc của bóng
 }
-// vẽ block tĩnh
-mat4 PosBlock;
-void drawPosBlock(vec3& pos, vec3& size)
-{
-	PosBlock = Translate(pos) * Scale(size);
-	glUniformMatrix4fv(model_loc, 1, GL_TRUE, PosBlock);
-	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
-}
+
 
 // vẽ quạt 
 mat4 ceilingFan_cmt;
@@ -287,7 +280,7 @@ void airConditioner()
 		color4(0.20, 0.20, 0.20, 1.0),   // Specular
 		20.0                             // Shininess
 	);
-	block_airConditioner_ctm = Translate(2.95, 2.2, -3.5) * RotateY(-90) * Scale(2.0, 2.0, 2.0);
+	block_airConditioner_ctm = Translate(3.55, 2.2, -3.5) * RotateY(-90) * Scale(2.0, 2.0, 2.0);
 	drawBlockAirConditioner(vec3(0.0, 0.0, 0.01), vec3(0.8, 0.3, 0.02));
 	drawBlockAirConditioner(vec3(0.0, 0.05, 0.19), vec3(0.8, 0.2, 0.02));
 
@@ -438,13 +431,13 @@ void drawDoor()
 	door_ctm = Translate(0, 0.02, 2.02);
 
 	// quay quanh bản lề
-	door_ctm *= Translate(1, 0.0, 0.0)
+	door_ctm *= Translate(1.2, 0.0, 0.0)
 		* RotateY(door_angle)
-		* Translate(-1, 0.0, 0.0);
+		* Translate(-1.2, 0.0, 0.0);
 
 
 	// thân cửa
-	door_model = Scale(2.0, 3.0, 0.05);
+	door_model = Scale(2.4, 3.0, 0.05);
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, door_ctm * door_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 	// núm cửa
@@ -454,7 +447,12 @@ void drawDoor()
 // Bàn thu ngân
 mat4 pos_model;
 float cashDrawerOpenAmount = 0;   // biến điều khiển ngăn kéo
-
+void drawPosBlock(vec3& pos, vec3& size)
+{
+	pos_model = Translate(pos) * Scale(size);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, pos_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
 // vẽ ngăn kéo đựng tiền
 void drawCashDrawer() {
 	// vẽ vỏ ngăn kéo
@@ -582,6 +580,14 @@ void banthungan() {
 	drawReceiptPrinter();
 }
 // vẽ nhà
+mat4 Walls_model;
+mat4 Walls_ctm = Scale(1.2, 1, 1);
+void drawWallsBlock(vec3& pos, vec3& size)
+{
+	Walls_model = Translate(pos) * Scale(size);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, Walls_ctm * Walls_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
 void drawRoom()
 {
 	setMaterial(
@@ -592,7 +598,7 @@ void drawRoom()
 	);
 
 	// SÀN
-	drawPosBlock(vec3(0, -1.5, -2), vec3(6, 0.05, 8.0));
+	drawWallsBlock(vec3(0, -1.5, -2), vec3(6, 0.05, 8.0));
 
 	setMaterial(
 		color4(0.25, 0.25, 0.25, 1.0),
@@ -602,23 +608,23 @@ void drawRoom()
 	);
 	// Bên trong
 	// TRẦN
-	drawPosBlock(vec3(0, 2.5, -2), vec3(6, 0.05, 8.0));
+	drawWallsBlock(vec3(0, 2.5, -2), vec3(6, 0.05, 8.0));
 
 	//  TƯỜNG SAU
-	drawPosBlock(vec3(0, 0.5, -6), vec3(6, 4, 0.05));
+	drawWallsBlock(vec3(0, 0.5, -6), vec3(6, 4, 0.05));
 
 	// TƯỜNG TRÁI
-	drawPosBlock(vec3(-3, 0.5, -2), vec3(0.05, 4.0, 8.0));
+	drawWallsBlock(vec3(-3, 0.5, -2), vec3(0.05, 4.0, 8.0));
 
 	// TƯỜNG PHẢI
-	drawPosBlock(vec3(3, 0.5, -2), vec3(0.05, 4.0, 8.0));
+	drawWallsBlock(vec3(3, 0.5, -2), vec3(0.05, 4.0, 8.0));
 
 	// TƯỜNG TRƯỚC
 	// 2 bên
-	drawPosBlock(vec3(-2.0, 0.5, 2), vec3(2.0, 4, 0.05));
-	drawPosBlock(vec3(2.0, 0.5, 2), vec3(2.0, 4, 0.05));
+	drawWallsBlock(vec3(-2.0, 0.5, 2), vec3(2.0, 4, 0.05));
+	drawWallsBlock(vec3(2.0, 0.5, 2), vec3(2.0, 4, 0.05));
 	// trên
-	drawPosBlock(vec3(0, 2.0, 2), vec3(2.0, 1.0, 0.05));
+	drawWallsBlock(vec3(0, 2.0, 2), vec3(2.0, 1.0, 0.05));
 
 	// Bên ngoài
 	color4 tmp = light_diffuse;
@@ -634,25 +640,25 @@ void drawRoom()
 	);
 
 	// sàn
-	drawPosBlock(vec3(0, -1.55, -2), vec3(6.1, 0.05, 8.1));
+	drawWallsBlock(vec3(0, -1.55, -2), vec3(6.1, 0.05, 8.1));
 	// TRẦN
-	drawPosBlock(vec3(0, 2.55, -2), vec3(6.1, 0.05, 8.1));
+	drawWallsBlock(vec3(0, 2.55, -2), vec3(6.1, 0.05, 8.1));
 
 	//  TƯỜNG SAU
-	drawPosBlock(vec3(0, 0.5, -6.05), vec3(6.1, 4.1, 0.05));
+	drawWallsBlock(vec3(0, 0.5, -6.05), vec3(6.1, 4.1, 0.05));
 
 	// TƯỜNG TRÁI
-	drawPosBlock(vec3(-3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
+	drawWallsBlock(vec3(-3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
 
 	// TƯỜNG PHẢI
-	drawPosBlock(vec3(3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
+	drawWallsBlock(vec3(3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
 
 	// TƯỜNG TRƯỚC
 	// 2 bên
-	drawPosBlock(vec3(-2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
-	drawPosBlock(vec3(2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
+	drawWallsBlock(vec3(-2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
+	drawWallsBlock(vec3(2.0, 0.5, 2.05), vec3(2, 4.1, 0.05));
 	// trên
-	drawPosBlock(vec3(0, 2.025, 2.05), vec3(2, 1.025, 0.05));
+	drawWallsBlock(vec3(0, 2.025, 2.05), vec3(2, 1.025, 0.05));
 
 	light_diffuse = tmp;
 }
@@ -756,7 +762,6 @@ const float uRightL = 0.85f;
 
 
 // -------- CAR PAINT (ADDED) --------
-// Chỉ đổi màu sơn cho THÂN + CỬA (các phần khác giữ nguyên vật liệu cũ).
 struct CarPaintMat
 {
 	color4 ka;
@@ -1025,7 +1030,7 @@ void car_seat(const mat4& Mcar)
 	drawOneSeat(-zOff);
 }
 
-// ---------- PART 7: bánh xe (tạm bằng cube để chạy chắc) ----------
+// ---------- PART 7: bánh xe ----------
 void car_wheels_cube(const mat4& Mcar)
 {
 	const float xFront = 0.95f, xRear = -0.95f;
@@ -1036,7 +1041,7 @@ void car_wheels_cube(const mat4& Mcar)
 	const float R = 0.22f;      // bán kính
 	const float T = 0.12f;      // độ dày bánh
 	const float wall = 0.05f;   // độ dày thành lốp
-	const int slices = 28;      // tăng lên 36/48 nếu muốn tròn hơn
+	const int slices = 9;      // tăng lên 36/48 nếu muốn tròn hơn
 
 	// Giữ đúng logic quay hiện tại của bạn:
 	// steer theo Y, spin theo Z
@@ -1060,8 +1065,6 @@ void drawCar()
 {
 	mat4 Mcar = carBaseMatrix(carX, carY, carZ, carHeading,  carScale);
 
-	// Không bind VAO ở đây.
-	// Vì bạn đang dùng cùng 1 VAO/VBO duy nhất cho cả scene.
 	car_body_U(Mcar);
 	car_doors_and_handles(Mcar);
 	car_windshield(Mcar);
@@ -1077,7 +1080,7 @@ void drawCar()
 const vec3  SHELF_BASE(0, -1.475f, -5.55f); // tâm đáy kệ nằm trên sàn
 const float SHELF_W = 3.60f;
 const float SHELF_D = 0.70f;
-const float SHELF_H = 2.20f;
+const float SHELF_H = 1.60f;
 const float SHELF_T = 0.05f;
 
 void drawShelf()
@@ -1111,8 +1114,8 @@ void drawShelf()
 	);
 
 	// các mặt kệ (3 tầng + nóc)
-	float shelfY[4] = { 0.10f, 0.75f, 1.40f, 2.05f };
-	for (int i = 0; i < 4; ++i)
+	float shelfY[4] = { 0.10f, 0.75f, 1.40f };
+	for (int i = 0; i < 3; ++i)
 	{
 		drawCubeNow(
 			Translate(SHELF_BASE) *
@@ -1141,13 +1144,12 @@ void drawCarAt(float x, float y, float z, float headingDeg, float scale, int pai
 }
 void drawShowcaseCarsOnShelf()
 {
-	// 4 tầng (đúng như bạn đang dùng trong kệ)
-	float levelY[4] = { 0.10f, 0.75f, 1.40f, 2.05f };
+\
+	float levelY[4] = { 0.10f, 0.75f, 1.40f };
 
-	const int carsPerRow = 5;
+	const int carsPerRow = 3;
 
-	// Phần bề ngang “lọt lòng” của kệ để đặt xe (trừ độ dày vách + chừa mép)
-	float margin = 0.20f; // chừa mép trái/phải để xe không chạm vách (tùy chỉnh)
+	float margin = 0.20f; 
 	float innerW = (SHELF_W - 2.0f * SHELF_T) - 2.0f * margin;
 
 	// vị trí Z của xe (đưa ra trước một chút)
@@ -1156,7 +1158,7 @@ void drawShowcaseCarsOnShelf()
 	// scale xe (nếu chật, giảm xuống 0.18f)
 	float carScaleShow = 0.20f;
 
-	for (int level = 0; level < 4; ++level)
+	for (int level = 0; level < 3; ++level)
 	{
 		for (int j = 0; j < carsPerRow; ++j)
 		{
@@ -1433,6 +1435,7 @@ void timer(int)
 	ceilingFanSpeedControl();
 	// cửa xe
 	car_door_auto();
+
 	glutPostRedisplay();                 // gọi vẽ lại
 	glutTimerFunc(1000 / 60, timer, 0); // 60 fps
 }
