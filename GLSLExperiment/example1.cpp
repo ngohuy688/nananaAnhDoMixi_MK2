@@ -460,10 +460,10 @@ void drawCashDrawer() {
 		color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0),
 		color4(0.7, 0.7, 0.7, 1.0), 64.0
 	);
-	drawPosBlock(vec3(1.6, -0.4, 1.0), vec3(0.5, 0.15, 0.6));
+	drawPosBlock(vec3(1.8, -0.4, 1.0), vec3(0.5, 0.15, 0.6));
 
 	// vẽ ngăn kéo
-	mat4 drawer_ctm = Translate(1.6 + cashDrawerOpenAmount, -0.4, 1.0);
+	mat4 drawer_ctm = Translate(1.8 + cashDrawerOpenAmount, -0.4, 1.0);
 
 	// Kích thước ngăn kéo 
 	float d_len = 0.45f;   // Chiều sâu (trục X)
@@ -535,14 +535,14 @@ void drawPosScreen() {
 		color4(0.8, 0.8, 0.8, 1.0), 128.0
 	);
 	// Chân đế màn hình 
-	drawPosBlock(vec3(1.6, -0.25, 1.0), vec3(0.15, 0.15, 0.15));
+	drawPosBlock(vec3(1.8, -0.25, 1.0), vec3(0.15, 0.15, 0.15));
 
 	// Thân màn hình chính 
-	drawPosBlock(vec3(1.6, -0.1, 1.0), vec3(0.05, 0.35, 0.5));
+	drawPosBlock(vec3(1.8, -0.1, 1.0), vec3(0.05, 0.35, 0.5));
 
 	// Màn hình hiển thị 
 	setMaterial(color4(0.8, 0.8, 0.8, 1.0), color4(0.9, 0.9, 0.9, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
-	drawPosBlock(vec3(1.625, -0.1, 1.0), vec3(0.01, 0.3, 0.45));
+	drawPosBlock(vec3(1.825, -0.1, 1.0), vec3(0.01, 0.3, 0.45));
 }
 
 // máy in hóa đơn
@@ -552,11 +552,11 @@ void drawReceiptPrinter() {
 		color4(0.3, 0.3, 0.3, 1.0), 32.0
 	);
 	// Thân máy in 
-	drawPosBlock(vec3(1.6, -0.4, 1.5), vec3(0.3, 0.25, 0.25));
+	drawPosBlock(vec3(1.8, -0.4, 1.5), vec3(0.3, 0.25, 0.25));
 
 	// Khe nhả giấy 
 	setMaterial(color4(0.05, 0.05, 0.05, 1.0), color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
-	drawPosBlock(vec3(1.7, -0.27, 1.5), vec3(0.05, 0.01, 0.15));
+	drawPosBlock(vec3(1.9, -0.27, 1.5), vec3(0.05, 0.01, 0.15));
 }
 // bàn thu ngân
 void banthungan() {
@@ -569,16 +569,102 @@ void banthungan() {
 	);
 
 	// Thân bàn
-	drawPosBlock(vec3(1.6, -1.0, 0.5), vec3(0.8, 1.0, 2.7));
+	drawPosBlock(vec3(1.8, -1.0, 0.5), vec3(0.8, 1.0, 2.7));
 
 	// Mặt bàn 
-	drawPosBlock(vec3(1.6, -0.48, 0.5), vec3(0.9, 0.05, 2.7));
+	drawPosBlock(vec3(1.8, -0.48, 0.5), vec3(0.9, 0.05, 2.7));
 
 	// Các thành phần trên bàn thu ngân
 	drawCashDrawer();
 	drawPosScreen();
 	drawReceiptPrinter();
 }
+
+// Ghế xoay
+float chair_angle = 0.0f; // Góc xoay của ghế
+
+// Hàm hỗ trợ vẽ khối (giữ nguyên)
+void drawInstance(mat4 instance_matrix) {
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, instance_matrix);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+// HÀM VẼ GHẾ XOAY VĂN PHÒNG (TRỤC VÀ BÁNH XE TRÒN)
+void gheXoay() {
+	float chairX = 2.95f;
+	float chairY = -1.48f; // Sàn nhà
+	float chairZ = 1.0f;
+
+	// --- THÔNG SỐ KÍCH THƯỚC ---
+	float legLen = 0.45f;
+	float wheelR = 0.05f;  // Bán kính bánh xe (Đường kính sẽ là 0.1)
+	float axisH = 0.5f;    // Chiều cao trục
+	float seatSize = 0.6f;
+
+	// --- 1. CHÂN GHẾ & BÁNH XE ---
+	setMaterial(
+		color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0),
+		color4(0.3, 0.3, 0.3, 1.0), 32.0
+	);
+
+	for (int i = 0; i < 360; i += 72) {
+		float rad = i * DegreesToRadians;
+
+		// a. Vẽ thanh chân ghế (Giữ nguyên)
+		float legY = chairY + wheelR * 2 + 0.02;
+		mat4 leg_ctm = Translate(chairX, legY, chairZ) * RotateY(i) * Translate(legLen / 2, 0.0, 0.0);
+		drawInstance(leg_ctm * Scale(legLen, 0.05, 0.06));
+
+		// b. Vẽ bánh xe (LÀM TRÒN MỊN)
+		// Tâm bánh xe
+		mat4 wheel_center = Translate(chairX, chairY + wheelR, chairZ) * RotateY(i) * Translate(legLen - 0.02, 0.0, 0.0);
+
+		// Dùng vòng lặp tạo hình trụ tròn cho bánh xe
+		// Xoay 90 độ quanh Z để bánh xe dựng đứng
+		// Sau đó xoay các lát cắt quanh trục Y cục bộ (trục bánh xe)
+		for (int k = 0; k < 180; k += 20) {
+			// Scale(Đường kính, Bề dày bánh, Độ dày lát cắt)
+			// Đường kính 0.1, Bề dày 0.04, Lát cắt mỏng 0.02
+			mat4 wheel_slice = wheel_center * RotateZ(90) * RotateY(k) * Scale(0.1, 0.04, 0.02);
+			drawInstance(wheel_slice);
+		}
+	}
+
+	// --- 2. TRỤC XOAY THỦY LỰC (LÀM TRÒN MỊN) ---
+	float axisBaseY = chairY + wheelR * 2;
+
+	// Dùng vòng lặp tạo hình trụ tròn cho trục
+	for (int j = 0; j < 180; j += 15) {
+		// Scale(Đường kính, Chiều cao, Độ dày lát cắt)
+		// Đường kính 0.09, Lát cắt mỏng 0.02
+		mat4 axis_slice = Translate(chairX, axisBaseY + axisH / 2, chairZ) * RotateY(j) * Scale(0.09, axisH, 0.02);
+		drawInstance(axis_slice);
+	}
+
+	// --- 3. PHẦN THÂN TRÊN (GIỮ NGUYÊN) ---
+	float seatBaseY = axisBaseY + axisH;
+	mat4 chair_upper = Translate(chairX, seatBaseY, chairZ) * RotateY(chair_angle);
+
+	// -- a. Đệm ngồi --
+	setMaterial(
+		color4(0.0, 0.0, 0.8, 1.0), color4(0.1, 0.1, 1.0, 1.0), color4(0.2, 0.2, 0.2, 1.0), 10.0
+	);
+	drawInstance(chair_upper * Translate(0.0, 0.05, 0.0) * Scale(seatSize, 0.1, seatSize));
+
+	// -- b. Thanh nối L-Shape --
+	setMaterial(
+		color4(0.1, 0.1, 0.1, 1.0), color4(0.1, 0.1, 0.1, 1.0), color4(0.5, 0.5, 0.5, 1.0), 32.0
+	);
+	drawInstance(chair_upper * Translate(0.25, 0.05, 0.0) * Scale(0.35, 0.05, 0.12));
+	drawInstance(chair_upper * Translate(0.4, 0.3, 0.0) * Scale(0.05, 0.5, 0.12));
+
+	// -- c. Lưng ghế --
+	setMaterial(
+		color4(0.0, 0.0, 0.8, 1.0), color4(0.1, 0.1, 1.0, 1.0), color4(0.2, 0.2, 0.2, 1.0), 10.0
+	);
+	drawInstance(chair_upper * Translate(0.34, 0.55, 0.0) * Scale(0.08, 0.7, 0.55));
+}
+
 // vẽ nhà
 mat4 Walls_model;
 mat4 Walls_ctm = Scale(1.2, 1, 1);
@@ -1315,7 +1401,9 @@ void display(void)
 	drawSecurityCamera();
 	ceilingFan();
 	airConditioner();
+
 	banthungan();
+	gheXoay();
 	// ===== Shelf corner + showcase cars (ADDED) =====
 	drawShelf();
 	drawShowcaseCarsOnShelf();
@@ -1539,6 +1627,26 @@ void keyboard(unsigned char key, int x, int y)
 		if (curtain_level < 1.0f)
 			curtain_level += 0.05f;
 		break;
+
+
+	case 'z': // Mở ngăn kéo tiền
+		cashDrawerOpenAmount += 0.02f;
+		if (cashDrawerOpenAmount > 0.4f) cashDrawerOpenAmount = 0.4f; // Giới hạn mở tối đa
+		glutPostRedisplay();
+		break;
+	case 'Z': // Đóng ngăn kéo tiền
+		cashDrawerOpenAmount -= 0.02f;
+		if (cashDrawerOpenAmount < 0.0f) cashDrawerOpenAmount = 0.0f; // Giới hạn đóng tối đa
+		glutPostRedisplay();
+		break;
+	case 'x': // Xoay ghế trái
+		chair_angle += 5.0f;
+		glutPostRedisplay();
+		break;
+	case 'X': // Xoay ghế phải
+		chair_angle -= 5.0f;
+		glutPostRedisplay();
+		break;
 	}
 }
 
@@ -1584,6 +1692,11 @@ void Instructor() {
 	cout << "1: auto mo/dong cua xe\n";
 	cout << "2: mo cua xe them (step)\n";
 	cout << "3: dong cua xe (step)\n";
+	cout << "==============Dao Minh Quan(Bàn thu ngân và ghế xoay)================== \n";
+	cout << "Đóng/Mở ngăn kéo: z/Z  \n";
+	cout << "Xoay ghế : x  \n";
+
+
 }
 
 int main(int argc, char** argv)
