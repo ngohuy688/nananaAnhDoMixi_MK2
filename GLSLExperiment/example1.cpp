@@ -246,7 +246,7 @@ void ceilingFanController()
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 
-	ceilingFan_model =Translate(0, 0.5, 0.1) * Scale(0.5, 0.2, 0.4);
+	ceilingFan_model =Translate(0, 0.5, 0.1) * Scale(0.5, 0.3, 0.4);
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 
@@ -265,7 +265,7 @@ void ceilingFanController()
 // ghép lại
 void ceilingFan()
 {
-	ceilingFan_cmt = RotateY(90) * Translate(-0.5, 0, -3.5);
+	ceilingFan_cmt = RotateY(90) * Translate(-0.5, 0, -3.5) * Scale(0.8, 0.8, 0.8);
 	ceilingFanController();
 
 	ceilingFan_cmt = Translate(0, 1.75, -2);
@@ -566,8 +566,10 @@ void drawCashDrawer() {
 // màn hình
 void drawPosScreen() {
 	setMaterial(
-		color4(0.02, 0.02, 0.02, 1.0), color4(0.08, 0.08, 0.08, 1.0),
-		color4(0.8, 0.8, 0.8, 1.0), 128.0
+		color4(0.02, 0.02, 0.02, 1.0), 
+		color4(0.08, 0.08, 0.08, 1.0),
+		color4(0.8, 0.8, 0.8, 1.0), 
+		128.0
 	);
 	// Chân đế màn hình 
 	drawPosBlock(vec3(1.8, -0.25, 1.0), vec3(0.15, 0.15, 0.15));
@@ -576,21 +578,29 @@ void drawPosScreen() {
 	drawPosBlock(vec3(1.8, -0.1, 1.0), vec3(0.05, 0.35, 0.5));
 
 	// Màn hình hiển thị 
-	setMaterial(color4(0.8, 0.8, 0.8, 1.0), color4(0.9, 0.9, 0.9, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	setMaterial(color4(0.8, 0.8, 0.8, 1.0), 
+		color4(0.9, 0.9, 0.9, 1.0), 
+		color4(0.1, 0.1, 0.1, 1.0), 
+		10.0);
 	drawPosBlock(vec3(1.825, -0.1, 1.0), vec3(0.01, 0.3, 0.45));
 }
 
 // máy in hóa đơn
 void drawReceiptPrinter() {
 	setMaterial(
-		color4(0.1, 0.1, 0.1, 1.0), color4(0.15, 0.15, 0.15, 1.0),
-		color4(0.3, 0.3, 0.3, 1.0), 32.0
+		color4(0.1, 0.1, 0.1, 1.0), 
+		color4(0.15, 0.15, 0.15, 1.0),
+		color4(0.3, 0.3, 0.3, 1.0), 
+		32.0
 	);
 	// Thân máy in 
 	drawPosBlock(vec3(1.8, -0.4, 1.5), vec3(0.3, 0.25, 0.25));
 
 	// Khe nhả giấy 
-	setMaterial(color4(0.05, 0.05, 0.05, 1.0), color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0), 10.0);
+	setMaterial(color4(0.05, 0.05, 0.05, 1.0), 
+		color4(0.05, 0.05, 0.05, 1.0), 
+		color4(0.1, 0.1, 0.1, 1.0), 
+		10.0);
 	drawPosBlock(vec3(1.9, -0.27, 1.5), vec3(0.05, 0.01, 0.15));
 }
 // bàn thu ngân
@@ -618,28 +628,30 @@ void banthungan() {
 // Ghế xoay
 float chair_angle = 0.0f; // Góc xoay của ghế
 
-// Hàm hỗ trợ vẽ khối (giữ nguyên)
+// Hàm hỗ trợ vẽ khối 
 void drawInstance(mat4 instance_matrix) {
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, instance_matrix);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
 
-// HÀM VẼ GHẾ XOAY VĂN PHÒNG (TRỤC VÀ BÁNH XE TRÒN)
+// HÀM VẼ GHẾ XOAY VĂN PHÒNG 
 void gheXoay() {
 	float chairX = 2.95f;
 	float chairY = -1.48f; // Sàn nhà
 	float chairZ = 1.0f;
 
-	// --- THÔNG SỐ KÍCH THƯỚC ---
+	// THÔNG SỐ KÍCH THƯỚC
 	float legLen = 0.45f;
-	float wheelR = 0.05f;  // Bán kính bánh xe (Đường kính sẽ là 0.1)
+	float wheelR = 0.05f;  // Bán kính bánh xe 
 	float axisH = 0.5f;    // Chiều cao trục
 	float seatSize = 0.6f;
 
-	// --- 1. CHÂN GHẾ & BÁNH XE ---
+	//  CHÂN GHẾ & BÁNH XE 
 	setMaterial(
-		color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0),
-		color4(0.3, 0.3, 0.3, 1.0), 32.0
+		color4(0.05, 0.05, 0.05, 1.0), 
+		color4(0.1, 0.1, 0.1, 1.0),
+		color4(0.3, 0.3, 0.3, 1.0), 
+		32.0
 	);
 
 	for (int i = 0; i < 360; i += 72) {
@@ -656,7 +668,7 @@ void gheXoay() {
 
 		// Dùng vòng lặp tạo hình trụ tròn cho bánh xe
 		// Xoay 90 độ quanh Z để bánh xe dựng đứng
-		// Sau đó xoay các lát cắt quanh trục Y cục bộ (trục bánh xe)
+		// Sau đó xoay các lát cắt quanh trục Y cục bộ 
 		for (int k = 0; k < 180; k += 20) {
 			// Scale(Đường kính, Bề dày bánh, Độ dày lát cắt)
 			// Đường kính 0.1, Bề dày 0.04, Lát cắt mỏng 0.02
@@ -665,7 +677,7 @@ void gheXoay() {
 		}
 	}
 
-	// --- 2. TRỤC XOAY THỦY LỰC (LÀM TRÒN MỊN) ---
+	// TRỤC XOAY THỦY LỰC
 	float axisBaseY = chairY + wheelR * 2;
 
 	// Dùng vòng lặp tạo hình trụ tròn cho trục
@@ -676,26 +688,32 @@ void gheXoay() {
 		drawInstance(axis_slice);
 	}
 
-	// --- 3. PHẦN THÂN TRÊN (GIỮ NGUYÊN) ---
+	//  PHẦN THÂN TRÊN
 	float seatBaseY = axisBaseY + axisH;
 	mat4 chair_upper = Translate(chairX, seatBaseY, chairZ) * RotateY(chair_angle);
 
-	// -- a. Đệm ngồi --
+	//  Đệm ngồi 
 	setMaterial(
 		color4(0.0, 0.0, 0.8, 1.0), color4(0.1, 0.1, 1.0, 1.0), color4(0.2, 0.2, 0.2, 1.0), 10.0
 	);
 	drawInstance(chair_upper * Translate(0.0, 0.05, 0.0) * Scale(seatSize, 0.1, seatSize));
 
-	// -- b. Thanh nối L-Shape --
+	//  Thanh nối L-Shape 
 	setMaterial(
-		color4(0.1, 0.1, 0.1, 1.0), color4(0.1, 0.1, 0.1, 1.0), color4(0.5, 0.5, 0.5, 1.0), 32.0
+		color4(0.1, 0.1, 0.1, 1.0), 
+		color4(0.1, 0.1, 0.1, 1.0), 
+		color4(0.5, 0.5, 0.5, 1.0), 
+		32.0
 	);
 	drawInstance(chair_upper * Translate(0.25, 0.05, 0.0) * Scale(0.35, 0.05, 0.12));
 	drawInstance(chair_upper * Translate(0.4, 0.3, 0.0) * Scale(0.05, 0.5, 0.12));
 
-	// -- c. Lưng ghế --
+	//  Lưng ghế 
 	setMaterial(
-		color4(0.0, 0.0, 0.8, 1.0), color4(0.1, 0.1, 1.0, 1.0), color4(0.2, 0.2, 0.2, 1.0), 10.0
+		color4(0.0, 0.0, 0.8, 1.0), 
+		color4(0.1, 0.1, 1.0, 1.0), 
+		color4(0.2, 0.2, 0.2, 1.0), 
+		10.0
 	);
 	drawInstance(chair_upper * Translate(0.34, 0.55, 0.0) * Scale(0.08, 0.7, 0.55));
 }
@@ -752,7 +770,7 @@ void drawRoom()
 	drawWallsBlock(vec3(0, 2.0, 2), vec3(2.0, 1.0, 0.05));
 
 	// Bên ngoài
-	color4 tmp = light_diffuse;
+	color4 cur_light = light_diffuse;
 	if (inday)
 		light_diffuse = vec4(1.0, 0.98, 0.95, 1.0);
 	else
@@ -797,15 +815,15 @@ void drawRoom()
 	// trên
 	drawWallsBlock(vec3(0, 2.025, 2.05), vec3(2, 1.025, 0.05));
 
-	light_diffuse = tmp;
+	light_diffuse = cur_light;
 }
 
 void drawCubeNow(const mat4& M)
 {
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, M);
-	glDrawArrays(GL_TRIANGLES, 0, NumPoints); // 36 đỉnh cube
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
-// ====== Wheel cylinder approximation (dùng cube xoay vòng như động cơ quạt) ======
+// Wheel cylinder approximation (dùng cube xoay vòng như động cơ quạt)
 void drawWheelCylinderLikeFan(const mat4& Mwheel,
 	float radius,     // bán kính bánh
 	float thickness,  // độ dày bánh (theo trục Z local)
@@ -819,7 +837,7 @@ void drawWheelCylinderLikeFan(const mat4& Mwheel,
 		24.0f);
 
 	float step = 360.0f / (float)slices;
-	// độ dài mỗi đoạn theo chu vi (xấp xỉ)
+	// độ dài mỗi đoạn theo chu vi 
 	float segLen = 2.0f * 3.1415926f * radius / (float)slices;
 
 	// 1) Thành lốp (vòng ngoài)
@@ -835,7 +853,7 @@ void drawWheelCylinderLikeFan(const mat4& Mwheel,
 		drawCubeNow(seg);
 	}
 
-	// 2) Mâm (hub) ở giữa
+	//  Mâm ở giữa
 	setMaterial(color4(0.08, 0.08, 0.08, 1.0),
 		color4(0.25, 0.25, 0.25, 1.0),
 		color4(0.40, 0.40, 0.40, 1.0),
@@ -857,7 +875,7 @@ void drawWheelCylinderLikeFan(const mat4& Mwheel,
 		drawCubeNow(seg);
 	}
 
-	// 3) Nút giữa
+	//  Nút giữa
 	setMaterial(color4(0.10, 0.10, 0.10, 1.0),
 		color4(0.35, 0.35, 0.35, 1.0),
 		color4(0.8, 0.8, 0.8, 1.0),
@@ -866,7 +884,7 @@ void drawWheelCylinderLikeFan(const mat4& Mwheel,
 		Mwheel * Scale(radius * 0.25f, radius * 0.25f, thickness * 1.05f));
 }
 
-// -------- Car state --------
+//  Car state 
 float carX = 0.0f;
 float carY = -1.0f;
 float carZ = -1.2f;
@@ -876,14 +894,14 @@ float carSteer = 0.0f;       // deg
 float carWheelSpin = 0.0f;   // deg
 float carScale = 0.5f;
 
-// -------- Door state --------
+//  Door state 
 float carDoorAngle = 0.0f;
 bool  carDoorAuto = false;
 bool  carDoorOpening = false;
 const float carDoorMax = 60.0f;
 const float carDoorAnimSpeed = 2.0f;
 
-// -------- Car dimensions --------
+// Car dimensions 
 const float carBodyL = 2.6f;
 const float carBodyH = 0.45f;
 const float carBodyW = 1.0f;
@@ -895,7 +913,7 @@ const float uLeftL = 1.10f;
 const float uRightL = 0.85f;
 
 
-// -------- CAR PAINT (ADDED) --------
+// CAR PAINT 
 struct CarPaintMat
 {
 	color4 ka;
@@ -931,7 +949,7 @@ inline CarPaintMat currentCarPaint()
 	if (idx < 0) idx += kNumCarPaints;
 	return gCarPaints[idx];
 }
-// -------- END CAR PAINT --------
+// END CAR PAINT
 
 mat4 carBaseMatrix(float carX, float carY, float carZ, float carHeading, float carScale)
 {
@@ -940,7 +958,7 @@ mat4 carBaseMatrix(float carX, float carY, float carZ, float carHeading, float c
 		* Scale(carScale, carScale, carScale);
 }
 
-// ---------- PART 1: body chữ U ----------
+//  body chữ U 
 void car_body_U(const mat4& Mcar)
 {
 	CarPaintMat p = currentCarPaint();
@@ -958,7 +976,7 @@ void car_body_U(const mat4& Mcar)
 	drawCubeNow(Mcar * Translate(xRightCenter, ySide, 0.0f) * Scale(uRightL, uSideH, carBodyW));
 }
 
-// ---------- PART 2: kính trước ----------
+// kính trước 
 void car_windshield(const mat4& Mcar)
 {
 	const float topBodyY = carBodyH * 0.5f;
@@ -975,7 +993,7 @@ void car_windshield(const mat4& Mcar)
 		Mcar * Translate(glassX, glassY, 0.0f) * RotateZ(glassTilt) * Scale(0.05f, glassH, 0.95f));
 }
 
-// ---------- PART 3: panel sau ----------
+//  panel sau
 void car_rear_panel(const mat4& Mcar)
 {
 	const float topBodyY = carBodyH * 0.5f;
@@ -991,7 +1009,7 @@ void car_rear_panel(const mat4& Mcar)
 		Mcar * Translate(backX, backY, 0.0f) * Scale(0.06f, backH, 0.95f));
 }
 
-// ---------- PART 4: đèn ----------
+//  đèn 
 void car_lights(const mat4& Mcar)
 {
 	// Headlights
@@ -1013,7 +1031,7 @@ void car_lights(const mat4& Mcar)
 	drawCubeNow(Mcar * Translate(-1.30f, 0.02f, -0.33f) * Scale(0.10f, 0.10f, 0.18f));
 }
 
-// ---------- PART 5: cửa + tay nắm ----------
+// cửa + tay nắm 
 mat4 car_door_matrix_posZ(const mat4& Mcar)
 {
 	const float doorL = 1.15f;
@@ -1104,7 +1122,7 @@ void car_door_auto() {
 		}
 	}
 }
-// ---------- PART 6: ghế ----------
+//  ghế 
 void car_seat(const mat4& Mcar)
 {
 	float yBottomTop = (-carBodyH * 0.5f) + uBottomH;
@@ -1134,7 +1152,7 @@ void car_seat(const mat4& Mcar)
 	drawOneSeat(-zOff);
 }
 
-// ---------- PART 7: bánh xe ----------
+//  bánh xe 
 void car_wheels_cube(const mat4& Mcar)
 {
 	const float xFront = 0.95f, xRear = -0.95f;
@@ -1164,7 +1182,7 @@ void car_wheels_cube(const mat4& Mcar)
 	drawOne(xRear, yWheel, zRight, RearRot);
 }
 
-// ---------- MAIN ----------
+//  MAIN 
 void drawCar()
 {
 	mat4 Mcar = carBaseMatrix(carX, carY, carZ, carHeading, carScale);
@@ -1179,7 +1197,7 @@ void drawCar()
 }
 
 
-// ===================== SHELF CORNER (WOOD) + SHOWCASE (ADDED) =====================
+//  SHELF CORNER + SHOWCASE 
 // Kệ gỗ đặt ở góc sau-trái (gần tường trái x=-3.03 và tường sau z=-6.05)
 const vec3  SHELF_BASE(0, -1.475f, -5.55f); // tâm đáy kệ nằm trên sàn
 const float SHELF_W = 3.60f;
@@ -1411,7 +1429,7 @@ void drawWindow()
 {
 	window_ctm = Translate(3.6, 0.5, -2) *  RotateY(90) * Scale(1.4, 1.2, 1.4);
 	drawWindowFrame();
-	window_ctm *= Translate(-1, -0.75, 0) * Scale(0.67, 0.75, 0.5);
+	window_ctm *= Translate(-1, -0.75, 0) * Scale(0.67, 0.75, 0.4);
 	mat4 goc = window_ctm; // Lưu trạng thái ma trận gốc
 
 	// --- HÀNG DƯỚI 
@@ -1539,7 +1557,7 @@ void display(void)
 
 	banthungan();
 	gheXoay();
-	// ===== Shelf corner + showcase cars (ADDED) =====
+
 	drawShelf();
 	drawShowcaseCarsOnShelf();
 	drawCar();
