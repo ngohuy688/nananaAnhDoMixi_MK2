@@ -147,14 +147,14 @@ void shaderSetup(void)
 	projection_loc = glGetUniformLocation(program, "Projection");
 	view_loc = glGetUniformLocation(program, "View");
 
-	point4 light_position(0.0, 1.0, 0.0, 0);   // vị trí mặt trời
+	point4 light_position(0.0, 1.0, 0.0, 1);   // vị trí mặt trời
 	glUniform4fv(glGetUniformLocation(program, "LightPosition"), 1, light_position);
 
 	glEnable(GL_DEPTH_TEST);
 }
 
 // ánh sáng
-color4 light_ambient(0.3, 0.3, 0.3, 1.0);     // ánh sáng môi trường
+color4 light_ambient(0.3, 0.3, 0.3, 1.0);     // ánh sáng nền
 color4 light_diffuse(1.0, 0.98, 0.95, 1.0);   // ánh sáng chiếu trực tiếp
 color4 light_specular(1.0, 1.0, 1.0, 1.0);	  // ánh sáng phản lại
 bool inlight = true;
@@ -166,7 +166,7 @@ void setMaterial(color4 material_ambient, color4 material_diffuse, color4 materi
 	color4 diffuse_product = light_diffuse * material_diffuse;
 	color4 specular_product = light_specular * material_specular;
 
-	glUniform4fv(glGetUniformLocation(program, "AmbientProduct"), 1, ambient_product); //độ tối
+	glUniform4fv(glGetUniformLocation(program, "AmbientProduct"), 1, ambient_product); //ánh
 	glUniform4fv(glGetUniformLocation(program, "DiffuseProduct"), 1, diffuse_product); //màu gốc
 	glUniform4fv(glGetUniformLocation(program, "SpecularProduct"), 1, specular_product); //độ bóng
 	glUniform1f(glGetUniformLocation(program, "Shininess"), shininess); //độ sắc của bóng
@@ -196,7 +196,7 @@ void shaft()
 	for (int i = 0; i <= 360; i += 20) {
 		ceilingFan_model = Translate(0, 0.4, 0) * RotateY(i) * Scale(0.07, 0.7, 0.07);
 		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 	}
 }
 // động cơ
@@ -212,7 +212,7 @@ void engine()
 	for (int i = 0; i <= 360; i += 10) {
 		ceilingFan_model = RotateY(i) * Scale(0.5, 0.2, 0.1);
 		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 	}
 }
 // cánh quạt
@@ -229,12 +229,45 @@ void propeller()
 	{
 		ceilingFan_model = RotateY(i) * Translate(0.6, 0.0, 0.0) * Scale(1.2, 0.02, 0.3);
 		glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 	}
+}
+// hộp số
+void ceilingFanController()
+{
+	// hộp số
+	setMaterial(
+		color4(0.10, 0.10, 0.12, 1.0),   // ambient
+		color4(0.5, 0.5, 0.5, 1.0),   // diffuse
+		color4(0.4, 0.4, 0.4, 1.0),      // specular
+		24.0                            // shininess
+	);
+	ceilingFan_model = Scale(0.5, 0.8, 0.3);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	ceilingFan_model =Translate(0, 0.5, 0.1) * Scale(0.5, 0.2, 0.4);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
+	// kim
+	setMaterial(
+		color4(0.10, 0.10, 0.12, 1.0),   // ambient
+		color4(0.8, 0.5, 0.5, 1.0),   // diffuse
+		color4(0.4, 0.4, 0.4, 1.0),      // specular
+		24.0                            // shininess
+	);
+	ceilingFan_model = RotateZ(-ceilingFan_level*40+90) * Translate(0, 0, 0.2) * Scale(0.3, 0.1, 0.1);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+
 }
 // ghép lại
 void ceilingFan()
 {
+	ceilingFan_cmt = RotateY(90) * Translate(-0.5, 0, -3.5);
+	ceilingFanController();
+
 	ceilingFan_cmt = Translate(0, 1.75, -2);
 	shaft();
 	engine();
@@ -242,6 +275,7 @@ void ceilingFan()
 	ceilingFan_cmt *= RotateY(ceilingFan_angle);
 	propeller();
 }
+// tinh tốc độ quay quạt
 void ceilingFanSpeedControl() {
 	if (ceilingFan_v < ceilingFan_levels[ceilingFan_level])
 		ceilingFan_v += 0.1f;
@@ -457,7 +491,8 @@ void drawPosBlock(vec3& pos, vec3& size)
 void drawCashDrawer() {
 	// vẽ vỏ ngăn kéo
 	setMaterial(
-		color4(0.05, 0.05, 0.05, 1.0), color4(0.1, 0.1, 0.1, 1.0),
+		color4(0.05, 0.05, 0.05, 1.0), 
+		color4(0.1, 0.1, 0.1, 1.0),
 		color4(0.7, 0.7, 0.7, 1.0), 64.0
 	);
 	drawPosBlock(vec3(1.6, -0.4, 1.0), vec3(0.5, 0.15, 0.6));
@@ -664,10 +699,10 @@ void drawRoom()
 	drawWallsBlock(vec3(-3.03, 0.5, -2), vec3(0.05, 4.1, 8.1));
 
 	// TƯỜNG PHẢI
-	drawWallsBlock(vec3(3.03, 2.0, -2), vec3(0.04, 1, 8));   // trên
-	drawWallsBlock(vec3(3.03, -1.0, -2), vec3(0.04, 1, 8));   // dưới
-	drawWallsBlock(vec3(3.03, 0.5, -4.75), vec3(0.04, 2, 2.5));   // trái
-	drawWallsBlock(vec3(3.03, 0.5, 0.75), vec3(0.04, 2, 2.5));   // phải
+	drawWallsBlock(vec3(3.03, 2.0, -2), vec3(0.04, 1, 8.1));   // trên
+	drawWallsBlock(vec3(3.03, -1.0, -2), vec3(0.04, 1, 8.1));   // dưới
+	drawWallsBlock(vec3(3.03, 0.5, -4.75), vec3(0.04, 2, 2.6));   // trái
+	drawWallsBlock(vec3(3.03, 0.5, 0.75), vec3(0.04, 2, 2.6));   // phải
 
 	// TƯỜNG TRƯỚC
 	// 2 bên
@@ -1154,45 +1189,36 @@ void drawShowcaseCarsOnShelf()
 }
 
 // RÈM CỬA
+mat4 curtain_ctm;
+mat4 curtain_model;
 
-mat4 window_ctm;
-mat4 window_model;
-
-float window_width = 6.0f;   // chiều ngang tổng
-float window_height = 4.0f;   // chiều cao
-float window_depth = 0.05f;  // độ dày
-
-float glass_width = window_width * 0.55f;
-float glass_height = window_height * 0.9f;
-float glass_depth = 0.02f;
+float curtain_width = 6.0f;   // chiều ngang tổng
+float curtain_height = 4.0f;   // chiều cao
+float curtain_depth = 0.05f;  // độ dày
 
 GLfloat curtain_level = 1.0f;   // 1.0 = kéo xuống hết, 0.0 = kéo lên hết
 GLfloat curtain_min = 0.05f;    // không cho biến mất hoàn toàn
 // THANH CUỘN RÈM 
 float rod_height = 0.25f;
 float rod_depth = 0.25f;
-// ĐÈN PHÒNG 
-mat4 roomLamp_ctm;
-mat4 roomLamp_model;
-bool roomLamp_on = true;
 
 // Khung cua so
 void drawCurtain()
 {
 	setMaterial(
 		color4(0.9, 0.9, 0.9, 1.0),   // ambient
-		color4(0.95, 0.95, 0.95, 1.0),// diffuse
+		color4(0.8, 0.9, 0.9, 1.0),// diffuse
 		color4(0.05, 0.05, 0.05, 1.0),// specular RẤT THẤP
 		4.0                          // shininess THẤP
 	);
-	float currentHeight = window_height * curtain_level;
+	float currentHeight = curtain_height * curtain_level;
 
 	// neo ở trên
-	window_model =
-		Translate(0, window_height / 2 - currentHeight / 2, 0)
-		* Scale(window_width, currentHeight, window_depth);
+	curtain_model =
+		Translate(0, curtain_height / 2 - currentHeight / 2, 0)
+		* Scale(curtain_width, currentHeight, curtain_depth);
 
-	glUniformMatrix4fv(model_loc, 1, GL_TRUE, window_ctm * window_model);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, curtain_ctm * curtain_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
 //thanh cuon
@@ -1207,23 +1233,132 @@ void drawCurtainRod()
 
 	// đặt ngay trên đỉnh cửa sổ
 	mat4 rod_model =
-		Translate(0, window_height / 2 - rod_height / 2, 0.12f)
-		* Scale(window_width + 0.2f, rod_height, rod_depth);
+		Translate(0, curtain_height / 2 - rod_height / 2, 0.12f)
+		* Scale(curtain_width + 0.2f, rod_height, rod_depth);
 
-	glUniformMatrix4fv(model_loc, 1, GL_TRUE, window_ctm * rod_model);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, curtain_ctm * rod_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 }
 
-//ham cua so
+//ham rem cua so
 void drawWindowCurtain()
 {
-	window_ctm = Translate(3.5, 0.5, -2.0) * RotateY(-90) * Scale(0.5, 0.5, 0.5);
+	curtain_ctm = Translate(3.5, 0.5, -2.0) * RotateY(-90) * Scale(0.5, 0.5, 0.5);
 
 	drawCurtain();
 	drawCurtainRod();
 }
 
+// ve cua so
+mat4 window_model;
+mat4 window_ctm;
+
+void drawWindowBlock(vec3 translate, vec3 scale)
+{
+	window_model = Translate(translate) * Scale(scale);
+	glUniformMatrix4fv(model_loc, 1, GL_TRUE, window_ctm * window_model);
+	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
+}
+
+void drawWindowGlasses()
+{
+	setMaterial(
+		color4(0.65, 0.80, 0.85, 0.6),
+		color4(0.75, 0.90, 0.95, 0.6),
+		color4(0.30, 0.30, 0.30, 0.6),
+		35.0
+	);
+	// cạnh dưới
+	drawWindowBlock(vec3(0.5, 0.0, 0.05), vec3(1.0, 0.05, 0.1));
+
+	// cạnh trên
+	drawWindowBlock(vec3(0.5, 1, 0.05), vec3(1.0, 0.05, 0.1));
+
+	// cạnh trái
+	drawWindowBlock(vec3(0.0, 0.5, 0.05), vec3(0.05, 1.0, 0.1));
+
+	// cạnh phải
+	drawWindowBlock(vec3(1, 0.5, 0.05), vec3(0.05, 1.0, 0.1));
+
+
+	// dải pixel 1
+	drawWindowBlock(vec3(0.20, 0.65, 0.06), vec3(0.06, 0.06, 0.02));
+	drawWindowBlock(vec3(0.27, 0.72, 0.06), vec3(0.06, 0.06, 0.02));
+	drawWindowBlock(vec3(0.34, 0.79, 0.06), vec3(0.06, 0.06, 0.02));
+
+	// dải pixel 3
+	drawWindowBlock(vec3(0.60, 0.20, 0.06), vec3(0.06, 0.06, 0.02));
+	drawWindowBlock(vec3(0.67, 0.27, 0.06), vec3(0.06, 0.06, 0.02));
+
+	setMaterial(
+		color4(0.20, 0.13, 0.07, 1.0),  // ambient
+		color4(0.55, 0.35, 0.18, 1.0),  // diffuse
+		color4(0.10, 0.10, 0.10, 1.0),  // specular
+		15.0                           // shininess
+	);
+}
+
+// Vẽ 4 thanh khung gỗ
+void drawWindowFrame()
+{
+	setMaterial(
+		color4(0.2, 0.2, 0.2, 1.0),   // ambient
+		color4(0.4, 0.4, 0.45, 1.0),  // diffuse (xám xanh như ảnh)
+		color4(0.1, 0.1, 0.1, 1.0),   // specular
+		5.0                            // shininess
+	);
+	
+	//  Thanh trên 
+	drawWindowBlock(vec3(0, 0.8, 0), vec3(2.2, 0.1, 0.1));
+
+	//  Thanh dưới 
+	drawWindowBlock(vec3(0, -0.8, 0), vec3(2.2, 0.1, 0.1));
+
+	//  Thanh trái
+	drawWindowBlock(vec3(-1.05, 0, 0), vec3(0.1, 1.5, 0.1));
+
+	// Thanh phải
+	drawWindowBlock(vec3(1.05, 0, 0), vec3(0.1, 1.5, 0.1));
+
+}
+void drawWindow() 
+{
+	window_ctm = Translate(3.6, 0.5, -2) *  RotateY(90) * Scale(1.4, 1.2, 1.4);
+	drawWindowFrame();
+	window_ctm *= Translate(-1, -0.75, 0) * Scale(0.67, 0.75, 0.5);
+	mat4 goc = window_ctm; // Lưu trạng thái ma trận gốc
+
+	// --- HÀNG DƯỚI 
+	// Cột 1
+	window_ctm = goc * Translate(0, 0, 0);
+	drawWindowGlasses();
+
+	// Cột 2
+	window_ctm = goc * Translate(1.0, 0, 0);
+	drawWindowGlasses();
+
+	// Cột 3
+	window_ctm = goc * Translate(2.0, 0, 0);
+	drawWindowGlasses();
+
+	// --- HÀNG TRÊN 
+	// Cột 1
+	window_ctm = goc * Translate(0, 1.0, 0);
+	drawWindowGlasses();
+
+	// Cột 2
+	window_ctm = goc * Translate(1.0, 1.0, 0);
+	drawWindowGlasses();
+	// Cột 3
+	window_ctm = goc * Translate(2.0, 1.0, 0);
+	drawWindowGlasses();
+}
+
 //ve den phong
+mat4 roomLamp_ctm;
+mat4 roomLamp_model;
+bool roomLamp_on = false;
+
 void drawRoomLamp()
 {
 	// DÂY TREO
@@ -1305,7 +1440,7 @@ void display(void)
 		if (!inday) light_diffuse = vec4(0.9, 0.9, 0.9, 1.0);
 	}
 	else {
-		light_diffuse = vec4(0.2, 0.2, 0.2, 1.0);
+		light_diffuse = vec4(0.2 + ((1.0f - curtain_level) / 2), 0.2 + ((1.0f - curtain_level) / 2), 0.2 + ((1.0f - curtain_level) / 2), 1.0);
 
 		if (!inday) light_diffuse = vec4(0.01, 0.01, 0.01, 1.0);
 	}
@@ -1323,6 +1458,7 @@ void display(void)
 
 	drawWindowCurtain();
 	drawRoomLampControl();
+	drawWindow();
 
 	glutSwapBuffers();
 }
@@ -1339,7 +1475,7 @@ void reshape(int width, int height)
 	glutWarpPointer(midWindowX, midWindowY); // tâm chuột
 
 	float aspect = (float)width / height;
-	projection = Perspective(90.0f, aspect, 0.1f, 100.0f);
+	projection = Perspective(60.0f, aspect, 0.1f, 100.0f);
 	glUniformMatrix4fv(projection_loc, 1, GL_TRUE, projection);
 
 	glViewport(0, 0, width, height);
@@ -1367,6 +1503,7 @@ void keyboard(unsigned char key, int x, int y)
 
 			switchToSecurityCamera();
 			inSecurityView = true;
+			mouseLocked = false;
 		}
 		else
 		{
@@ -1377,6 +1514,7 @@ void keyboard(unsigned char key, int x, int y)
 			yaw = playerSavedYaw;
 			pitch = playerSavedPitch;
 			inSecurityView = false;
+			mouseLocked = true;
 		}
 		break;
 	case 'c':   // bật / tắt camera an ninh
@@ -1446,6 +1584,7 @@ void keyboard(unsigned char key, int x, int y)
 
 	case 'l': // sáng/tối
 		inlight = !inlight;
+		roomLamp_on = !roomLamp_on;
 		break;
 	case 'L': // ngày/đêm
 		if (!inday) {
@@ -1458,7 +1597,6 @@ void keyboard(unsigned char key, int x, int y)
 			sky_green = 0.1;
 			sky_blue = 0.25;
 		}
-		roomLamp_on = !roomLamp_on;
 		inday = !inday;
 		break;
 	case 'e':	//mở cửa điều hòa
