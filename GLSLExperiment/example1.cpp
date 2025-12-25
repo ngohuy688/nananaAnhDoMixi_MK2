@@ -235,6 +235,7 @@ void propeller()
 // hộp số
 void ceilingFanController()
 {
+	ceilingFan_cmt = Translate(-3.5, 0, -0.5) * RotateY(90) * Scale(0.6, 0.6, 0.6);
 	// hộp số
 	setMaterial(
 		color4(0.10, 0.10, 0.12, 1.0),   // ambient
@@ -257,7 +258,7 @@ void ceilingFanController()
 		color4(0.4, 0.4, 0.4, 1.0),      // specular
 		24.0                            // shininess
 	);
-	ceilingFan_model = RotateZ(-ceilingFan_level*40+90) * Translate(0, 0, 0.2) * Scale(0.3, 0.1, 0.1);
+	ceilingFan_model = RotateZ(-ceilingFan_level*40) * Translate(0, 0, 0.2) * Scale(0.1, 0.3, 0.1);
 	glUniformMatrix4fv(model_loc, 1, GL_TRUE, ceilingFan_cmt * ceilingFan_model);
 	glDrawArrays(GL_TRIANGLES, 0, NumPoints);
 
@@ -265,14 +266,11 @@ void ceilingFanController()
 // ghép lại
 void ceilingFan()
 {
-	ceilingFan_cmt = RotateY(90) * Translate(-0.5, 0, -3.5) * Scale(0.8, 0.8, 0.8);
-	ceilingFanController();
-
 	ceilingFan_cmt = Translate(0, 1.75, -2);
 	shaft();
-	engine();
 
 	ceilingFan_cmt *= RotateY(ceilingFan_angle);
+	engine();
 	propeller();
 }
 // tinh tốc độ quay quạt
@@ -794,7 +792,7 @@ void drawRoom()
 	// sàn
 	drawWallsBlock(vec3(0, -1.55, -2), vec3(6.1, 0.05, 8.1));
 	// TRẦN
-	drawWallsBlock(vec3(0, 2.55, -2), vec3(6.1, 0.05, 8.1));
+	drawWallsBlock(vec3(0, 3.55, -2), vec3(8, 1.05, 10));
 
 	//  TƯỜNG SAU
 	drawWallsBlock(vec3(0, 0.5, -6.05), vec3(6.1, 4.1, 0.05));
@@ -1532,7 +1530,7 @@ void display(void)
 
 	vec4 at = eye + vec4(dir, 0.0);
 
-	vec4 up(0.0, 1.0, 0.0, 1.0);
+	vec4 up(0.0, 1.0, 0.0, 0);
 
 	view = LookAt(eye, at, up);
 	glUniformMatrix4fv(view_loc, 1, GL_TRUE, view);
@@ -1550,18 +1548,25 @@ void display(void)
 	}
 	//draw
 	drawRoom();
+	// Tuan Linh
 	drawDoor();
 	drawSecurityCamera();
+
+	// Ngo Huy
 	ceilingFan();
+	ceilingFanController();
 	airConditioner();
 
+	// Quan
 	banthungan();
 	gheXoay();
 
+	// Anh Dat
 	drawShelf();
 	drawShowcaseCarsOnShelf();
 	drawCar();
 
+	// Tung
 	drawWindowCurtain();
 	drawRoomLampControl();
 	drawWindow();
