@@ -43,6 +43,7 @@ int midWindowY;
 bool mouseLocked = true;
 float yaw = 0.0f;
 float pitch = 0.0f;
+float fov = 60;
 
 float cameraX = 0.0f;
 float cameraY = 0.0f;
@@ -1586,7 +1587,7 @@ void reshape(int width, int height)
 	glutWarpPointer(midWindowX, midWindowY); // tâm chuột
 
 	float aspect = (float)width / height;
-	projection = Perspective(60.0f, aspect, 0.1f, 100.0f);
+	projection = Perspective(fov, aspect, 0.1f, 100.0f);
 	glUniformMatrix4fv(projection_loc, 1, GL_TRUE, projection);
 
 	glViewport(0, 0, width, height);
@@ -1815,7 +1816,7 @@ void timer(int)
 {
 	// tính tốc độ quay của quạt
 	ceilingFanSpeedControl();
-	// cửa xe
+	// điều khiển cửa xe
 	car_door_auto();
 
 	glutPostRedisplay();                 // gọi vẽ lại
