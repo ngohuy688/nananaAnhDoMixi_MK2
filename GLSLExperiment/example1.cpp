@@ -793,7 +793,7 @@ void drawRoom()
 	// sàn
 	drawWallsBlock(vec3(0, -1.55, -2), vec3(6.1, 0.05, 8.1));
 	// TRẦN
-	drawWallsBlock(vec3(0, 3.55, -2), vec3(8, 1.05, 10));
+	drawWallsBlock(vec3(0, 3.05, -2), vec3(8, 1.05, 10));
 
 	//  TƯỜNG SAU
 	drawWallsBlock(vec3(0, 0.5, -6.05), vec3(6.1, 4.1, 0.05));
@@ -1839,7 +1839,13 @@ void handleMouseMove(int x, int y) {
 }
 
 void Instructor() {
-	cout << "a, s, w, d, space, shift + space, mouse: các phím di chuyển \n";
+	cout << "==============Ngo Van Huy==================== \n";
+	cout << "a, s, w, d, mouse: cac phim di chuyen \n";
+	cout << "space, shift + space : len/xuong \n";
+	cout << "l: bat/tat den \n";
+	cout << "L: ban ngay/ban dem \n";
+	cout << "q : bat tat quat \n";
+	cout << "e/E: dong/mo canh dieu hoa \n";
 	cout << "==============Dang Tuan Linh(Cua va camera)================== \n";
 	cout << "Van xuoi num: k de mo cua \n";
 	cout << "Van nguoc num : j de khoa cua \n";
@@ -1857,8 +1863,10 @@ void Instructor() {
 	cout << "==============Dao Minh Quan(Bàn thu ngân và ghế xoay)================== \n";
 	cout << "Đóng/Mở ngăn kéo: z/Z  \n";
 	cout << "Xoay ghế : x  \n";
-
-
+	cout << "==============Nguyen Van Tung (rem, cua so va den)================== \n";
+	cout << "Keo rem len : i \n";
+	cout << "Keo rem xuong : I \n";
+	cout << "Bat/tat den phong : l \n";
 }
 
 int main(int argc, char** argv)
